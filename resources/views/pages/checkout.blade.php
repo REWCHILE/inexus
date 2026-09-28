@@ -149,26 +149,29 @@
 
                         <div style="display:flex; flex-direction:column; gap:14px;">
                             <!-- Mercado Pago -->
-                            <label style="border:2px solid var(--primary); border-radius:var(--radius-md); padding:16px; display:flex; align-items:flex-start; gap:14px; cursor:pointer; background:#f0f9ff;">
-                                <input type="radio" name="payment_method" value="mercadopago" checked style="margin-top:4px; accent-color:var(--primary);">
+                            <label id="label-method-mp" style="border:2px solid var(--primary); border-radius:var(--radius-md); padding:16px; display:flex; align-items:flex-start; gap:14px; cursor:pointer; background:#f0f9ff; transition:all 0.2s ease;">
+                                <input type="radio" name="payment_method" value="mercadopago" checked style="margin-top:4px; accent-color:var(--primary);" onchange="handlePaymentMethodChange(this.value)">
                                 <div>
                                     <div style="display:flex; align-items:center; gap:8px;">
                                         <span style="font-weight:700; font-size:15px; color:var(--navy-900);">Mercado Pago (Tarjetas Débito / Crédito / Webpay)</span>
                                         <span class="badge badge-info" style="font-size:11px;">Recomendado</span>
                                     </div>
                                     <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">
-                                        Paga de forma 100% segura con tus tarjetas bancarias chilenas, Redcompra o saldo en Mercado Pago en CLP.
+                                        Paga en hasta 12 cuotas con tarjetas bancarias chilenas, Redcompra, Cuenta RUT o saldo en Mercado Pago en CLP.
                                     </p>
                                 </div>
                             </label>
 
-                            <!-- Transferencia Bancaria -->
-                            <label style="border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; display:flex; align-items:flex-start; gap:14px; cursor:pointer;">
-                                <input type="radio" name="payment_method" value="transferencia" style="margin-top:4px; accent-color:var(--primary);">
+                            <!-- Transferencia Bancaria Directa (5% OFF) -->
+                            <label id="label-method-tf" style="border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; display:flex; align-items:flex-start; gap:14px; cursor:pointer; transition:all 0.2s ease;">
+                                <input type="radio" name="payment_method" value="transferencia" style="margin-top:4px; accent-color:var(--primary);" onchange="handlePaymentMethodChange(this.value)">
                                 <div>
-                                    <span style="font-weight:700; font-size:15px; color:var(--navy-900);">Transferencia Electrónica Directa</span>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-weight:700; font-size:15px; color:var(--navy-900);">Transferencia Electrónica Directa</span>
+                                        <span class="badge" style="background:#dcfce7; color:#15803d; font-size:11px; font-weight:800;">5% DE DESCUENTO INMEDIATO</span>
+                                    </div>
                                     <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">
-                                        Recibe nuestros datos bancarios para transferencia desde cualquier banco chileno con validación rápida.
+                                        Ahorra un 5% en tu compra pagando desde cualquier banco chileno (Banco de Chile, Santander, BCI, BancoEstado, etc.). Validación rápida con comprobante.
                                     </p>
                                 </div>
                             </label>
@@ -208,6 +211,13 @@
                                 <span style="color:var(--text-muted);">Subtotal:</span>
                                 <span style="font-weight:600;">${{ number_format($subtotal, 0, ',', '.') }} CLP</span>
                             </div>
+
+                            <!-- 5% Transfer Discount Row -->
+                            <div id="transfer-discount-row" style="display:none; justify-content:space-between; color:#15803d; font-weight:700;">
+                                <span>Descuento Transferencia (5%):</span>
+                                <span id="transfer-discount-val">-${{ number_format(round($subtotal * 0.05), 0, ',', '.') }} CLP</span>
+                            </div>
+
                             <div style="display:flex; justify-content:space-between;">
                                 <span style="color:var(--text-muted);">Despacho Express:</span>
                                 <span style="font-weight:600; color:{{ $shipping === 0 ? '#166534' : 'var(--text-main)' }};">
@@ -222,7 +232,7 @@
 
                         <div style="border-top:2px solid var(--border-color); padding-top:14px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-size:16px; font-weight:800; color:var(--navy-900);">Total Final:</span>
-                            <span style="font-family:'Plus Jakarta Sans'; font-size:24px; font-weight:800; color:var(--primary);">
+                            <span id="final-total-display" style="font-family:'Plus Jakarta Sans'; font-size:24px; font-weight:800; color:var(--primary);">
                                 ${{ number_format($total, 0, ',', '.') }} CLP
                             </span>
                         </div>
@@ -244,4 +254,41 @@
         </form>
     </div>
 
+@endsection
+
+@section('scripts')
+<script>
+    const baseSubtotal = {{ $subtotal }};
+    const shippingCost = {{ $shipping }};
+    const transferDiscountAmount = Math.round(baseSubtotal * 0.05);
+
+    function handlePaymentMethodChange(method) {
+        const mpLabel = document.getElementById('label-method-mp');
+        const tfLabel = document.getElementById('label-method-tf');
+        const discountRow = document.getElementById('transfer-discount-row');
+        const totalDisplay = document.getElementById('final-total-display');
+
+        if (method === 'transferencia') {
+            tfLabel.style.border = '2px solid #16a34a';
+            tfLabel.style.background = '#f0fdf4';
+            mpLabel.style.border = '1px solid var(--border-color)';
+            mpLabel.style.background = '#ffffff';
+
+            discountRow.style.display = 'flex';
+            const newTotal = (baseSubtotal - transferDiscountAmount) + shippingCost;
+            totalDisplay.innerText = '$' + newTotal.toLocaleString('es-CL') + ' CLP';
+            totalDisplay.style.color = '#15803d';
+        } else {
+            mpLabel.style.border = '2px solid var(--primary)';
+            mpLabel.style.background = '#f0f9ff';
+            tfLabel.style.border = '1px solid var(--border-color)';
+            tfLabel.style.background = '#ffffff';
+
+            discountRow.style.display = 'none';
+            const normalTotal = baseSubtotal + shippingCost;
+            totalDisplay.innerText = '$' + normalTotal.toLocaleString('es-CL') + ' CLP';
+            totalDisplay.style.color = 'var(--primary)';
+        }
+    }
+</script>
 @endsection

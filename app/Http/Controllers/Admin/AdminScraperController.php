@@ -43,20 +43,29 @@ class AdminScraperController extends Controller
         if (empty($sku) && empty($name)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Por favor ingrese un SKU o nombre de producto para realizar la búsqueda.',
+                'message' => 'Por favor ingrese un SKU, enlace (URL) o nombre de producto para realizar la búsqueda.',
             ]);
         }
 
         $result = null;
 
-        if ($source === 'spdigital' || $source === 'all') {
-            $result = $this->scraper->scrapeSpDigital($sku, $name);
-        }
+        // Check if input is a direct product URL (e.g. Winpy, Solotodo, etc.)
+        if (\Illuminate\Support\Str::startsWith($sku, ['http://', 'https://']) || \Illuminate\Support\Str::contains($sku, ['winpy.cl', 'solotodo.cl'])) {
+            $result = $this->scraper->scrapeUrl($sku);
+        } else {
+            if ($source === 'winpy' || $source === 'all') {
+                $result = $this->scraper->scrapeWinpy($sku, $name);
+            }
 
-        if ((empty($result['image_url'])) && ($source === 'mercadolibre' || $source === 'all')) {
-            $ml = $this->scraper->scrapeMercadoLibre($sku, $name);
-            if (!empty($ml['image_url'])) {
-                $result = $ml;
+            if ((empty($result['image_url'])) && ($source === 'spdigital' || $source === 'all')) {
+                $result = $this->scraper->scrapeSpDigital($sku, $name);
+            }
+
+            if ((empty($result['image_url'])) && ($source === 'mercadolibre' || $source === 'all')) {
+                $ml = $this->scraper->scrapeMercadoLibre($sku, $name);
+                if (!empty($ml['image_url'])) {
+                    $result = $ml;
+                }
             }
         }
 
@@ -64,7 +73,7 @@ class AdminScraperController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $result,
-                'message' => "Scraping exitoso desde {$result['source']}.",
+                'message' => "Scraping exitoso desde " . strtoupper($result['source'] ?? 'canal') . ".",
             ]);
         }
 
@@ -92,21 +101,35 @@ class AdminScraperController extends Controller
         $productId = $request->get('product_id');
         $imageUrl = $request->get('image_url');
         $description = $request->get('description');
+        $specs = $request->get('specifications');
+        $regularPrice = $request->get('regular_price');
+        $salePrice = $request->get('sale_price');
+        $source = $request->get('source', 'scraper');
 
         $product = Product::findOrFail($productId);
         if ($imageUrl) {
             $product->main_image = $imageUrl;
             $product->scraper_status = 'found';
         }
-        if ($description && empty($product->description)) {
+        if ($description) {
             $product->description = $description;
         }
+        if (!empty($specs) && is_array($specs)) {
+            $product->specifications = $specs;
+        }
+        if ($regularPrice && $regularPrice > 0) {
+            $product->regular_price = (float) $regularPrice;
+        }
+        if ($salePrice && $salePrice > 0) {
+            $product->sale_price = (float) $salePrice;
+        }
+        $product->scraper_source = $source;
         $product->scraper_last_run = now();
         $product->save();
 
         return response()->json([
             'success' => true,
-            'message' => "Imagen y datos aplicados correctamente al producto {$product->name}.",
+            'message' => "Datos, especificaciones e imágenes aplicados correctamente al producto {$product->name}.",
         ]);
     }
 }

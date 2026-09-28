@@ -119,17 +119,41 @@ class Product extends Model
         return '$' . number_format($this->current_price, 0, ',', '.') . ' CLP';
     }
 
-    public function getFormattedRegularPriceAttribute(): string
+    public function getTransferDiscountPercentageAttribute(): float
     {
-        return '$' . number_format($this->regular_price, 0, ',', '.') . ' CLP';
+        return (float) Setting::get('transfer_discount_percentage', 5.0);
     }
 
-    public function getFormattedSalePriceAttribute(): ?string
+    public function getNormalPriceAttribute(): float
     {
-        if ($this->sale_price && $this->sale_price > 0) {
-            return '$' . number_format($this->sale_price, 0, ',', '.') . ' CLP';
-        }
-        return null;
+        return (float) $this->current_price;
+    }
+
+    public function getFormattedNormalPriceAttribute(): string
+    {
+        return '$' . number_format($this->normal_price, 0, ',', '.') . ' CLP';
+    }
+
+    public function getTransferPriceAttribute(): float
+    {
+        $discount = $this->transfer_discount_percentage;
+        $price = $this->normal_price * (1 - ($discount / 100));
+        return round($price / 10) * 10;
+    }
+
+    public function getFormattedTransferPriceAttribute(): string
+    {
+        return '$' . number_format($this->transfer_price, 0, ',', '.') . ' CLP';
+    }
+
+    public function getTransferSavingsAttribute(): float
+    {
+        return max(0, $this->normal_price - $this->transfer_price);
+    }
+
+    public function getFormattedTransferSavingsAttribute(): string
+    {
+        return '$' . number_format($this->transfer_savings, 0, ',', '.') . ' CLP';
     }
 
     public function getImageUrlAttribute(): string

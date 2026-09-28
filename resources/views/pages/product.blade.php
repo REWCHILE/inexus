@@ -87,14 +87,36 @@
                     </p>
                 @endif
 
-                <!-- Pricing Box -->
-                <div class="product-pricing-box">
-                    <div style="font-size:12.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-weight:700;">
-                        Precio Especial Chile
+                <!-- Dual Pricing Box (Chilean Hardware Market Standard) -->
+                <div class="dual-pricing-detail-card">
+                    <div class="dual-pricing-row">
+                        <!-- Transferencia / Efectivo -->
+                        <div class="price-transfer-block">
+                            <div style="display:flex; align-items:center; margin-bottom:4px;">
+                                <span class="price-badge-discount">{{ $product->transfer_discount_percentage }}% OFF</span>
+                                <span class="price-label-primary">Transferencia / Efectivo</span>
+                            </div>
+                            <div class="pricing-current-transfer">{{ $product->formatted_transfer_price }}</div>
+                            <div class="price-savings-note">
+                                Ahorras <strong>{{ $product->formatted_transfer_savings }}</strong> con transferencia
+                            </div>
+                        </div>
+
+                        <div class="price-divider"></div>
+
+                        <!-- Tarjeta / Normal -->
+                        <div class="price-normal-block">
+                            <span class="price-label-secondary">Tarjeta / Webpay / Otros</span>
+                            <div class="pricing-normal">{{ $product->formatted_normal_price }}</div>
+                            <div class="price-card-note">
+                                Hasta 12 cuotas en Mercado Pago
+                            </div>
+                        </div>
                     </div>
-                    <div class="pricing-current">{{ $product->formatted_price }}</div>
-                    <div class="pricing-details">
-                        ✓ Incluye IVA 19% | Emisión de Factura Electrónica o Boleta en el Checkout
+
+                    <div style="font-size:12.5px; color:#64748b; padding-top:12px; border-top:1px dashed #e2e8f0; display:flex; align-items:center; gap:8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Precios incluyen IVA (19%) | Factura Electrónica disponible para empresas con RUT y Giro</span>
                     </div>
                 </div>
 

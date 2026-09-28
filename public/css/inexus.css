@@ -633,6 +633,128 @@ img {
     font-weight: 800;
     color: var(--navy-900);
 }
+
+/* ==========================================================================
+   DUAL PRICING DIFFERENTIATOR ("Dentro y Fuera")
+   ========================================================================== */
+.dual-pricing-card {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-start;
+}
+.price-badge-pill {
+    display: inline-block;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 1px;
+}
+.price-transfer-val {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #15803d;
+    line-height: 1.2;
+}
+.price-normal-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+.price-normal-val {
+    font-weight: 600;
+    color: var(--navy-800);
+}
+
+/* Detail page dual pricing card */
+.dual-pricing-detail-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-bottom: 24px;
+}
+.dual-pricing-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 14px;
+}
+@media (max-width: 640px) {
+    .dual-pricing-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .price-divider {
+        display: none;
+    }
+}
+.price-transfer-block {
+    flex: 1;
+}
+.price-badge-discount {
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-right: 6px;
+}
+.price-label-primary {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #15803d;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.pricing-current-transfer {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #15803d;
+    margin: 6px 0;
+}
+.price-savings-note {
+    font-size: 12.5px;
+    color: #166534;
+}
+.price-divider {
+    width: 1px;
+    height: 60px;
+    background: #cbd5e1;
+}
+.price-normal-block {
+    flex: 1;
+}
+.price-label-secondary {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.pricing-normal {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy-900);
+    margin: 6px 0;
+}
+.price-card-note {
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
 .btn-quick-add {
     background: var(--primary-light);
     color: var(--primary-dark);

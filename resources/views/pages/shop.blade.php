@@ -139,7 +139,14 @@
                                     <div class="product-sku-code">SKU: {{ $product->sku }}</div>
 
                                     <div class="product-price-box">
-                                        <div class="price-val">{{ $product->formatted_price }}</div>
+                                        <div class="dual-pricing-card">
+                                            <span class="price-badge-pill">Transferencia {{ $product->transfer_discount_percentage }}% OFF</span>
+                                            <div class="price-transfer-val">{{ $product->formatted_transfer_price }}</div>
+                                            <div class="price-normal-wrap">
+                                                <span>Tarjeta:</span>
+                                                <span class="price-normal-val">{{ $product->formatted_normal_price }}</span>
+                                            </div>
+                                        </div>
 
                                         <form action="{{ route('cart.add') }}" method="POST" class="ajax-add-to-cart">
                                             @csrf

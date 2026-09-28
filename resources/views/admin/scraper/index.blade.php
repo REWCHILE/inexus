@@ -43,7 +43,7 @@
         <div class="metric-card">
             <div>
                 <div class="metric-title">Canales Activos</div>
-                <div class="metric-value" style="font-size:18px; color:var(--primary);">SPDigital + ML</div>
+                <div class="metric-value" style="font-size:18px; color:var(--primary);">Winpy + SPDigital + ML</div>
                 <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Camuflaje de User-Agents</div>
             </div>
             <div style="width:44px; height:44px; border-radius:10px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center;">
@@ -57,15 +57,16 @@
         
         <!-- Live Single SKU Scraper Tester -->
         <div class="checkout-card" style="margin:0;">
-            <h3 style="font-size:17px; margin-bottom:6px;">Prueba de Scraping en Vivo por SKU</h3>
+            <h3 style="font-size:17px; margin-bottom:6px;">Prueba de Scraping en Vivo (Enlace o SKU)</h3>
             <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
-                Ingresa cualquier SKU o código de fabricante para rastrear imágenes en tiempo real y aplicarlas al producto.
+                Pega directamente una URL de producto (<strong>Winpy</strong>, SPDigital, MercadoLibre) o ingresa un SKU/código de fabricante para rastrear en vivo.
             </p>
 
             <div style="display:flex; gap:10px; margin-bottom:16px;">
-                <input type="text" id="live-sku-input" placeholder="Ej: GV-N4060GAMING-8GD o ThinkPad E14" class="form-control" style="flex:1;">
+                <input type="text" id="live-sku-input" placeholder="Ej: https://www.winpy.cl/venta/... o SKC3000S/1024G" class="form-control" style="flex:1;">
                 <select id="live-source-select" class="form-control" style="max-width:160px;">
                     <option value="all">Todos los Canales</option>
+                    <option value="winpy" selected>Winpy Chile</option>
                     <option value="spdigital">SPDigital Chile</option>
                     <option value="mercadolibre">Mercado Libre</option>
                 </select>
@@ -202,14 +203,45 @@
 
             if (data.success && data.data) {
                 const item = data.data;
+                const priceTransfer = item.transfer_price ? `$${Number(item.transfer_price).toLocaleString('es-CL')} CLP` : null;
+                const priceNormal = item.normal_price ? `$${Number(item.normal_price).toLocaleString('es-CL')} CLP` : null;
+
                 box.innerHTML = `
-                    <div style="color:#15803d; font-weight:700; margin-bottom:12px;">✓ ${data.message}</div>
-                    <div style="display:flex; gap:16px; align-items:center;">
-                        <img src="${item.image_url}" alt="" style="max-height:100px; max-width:100px; border-radius:6px; border:1px solid #e2e8f0; background:#fff; object-fit:contain;">
-                        <div>
-                            <div style="font-weight:700; font-size:14px; margin-bottom:4px;">Canal: <span style="text-transform:uppercase; color:var(--primary);">${item.source}</span></div>
-                            <div style="font-size:12.5px; color:var(--text-muted); word-break:break-all; margin-bottom:8px;">${item.image_url}</div>
-                            <a href="${item.product_url}" target="_blank" style="font-size:12px; color:var(--primary); font-weight:600;">Ver publicación original ↗</a>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="color:#15803d; font-weight:700;">✓ ${data.message}</span>
+                        <span class="badge" style="background:#0284c7; color:#fff; text-transform:uppercase;">Canal: ${item.source}</span>
+                    </div>
+                    <div style="display:flex; gap:18px; align-items:flex-start;">
+                        <img src="${item.image_url}" alt="" style="max-height:110px; max-width:110px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; object-fit:contain; padding:4px;">
+                        <div style="flex:1;">
+                            <h4 style="font-size:15px; margin:0 0 6px; color:var(--navy-900); font-weight:700;">${item.title || 'Producto Encontrado'}</h4>
+                            <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+                                <strong>SKU / N° Parte:</strong> <code style="background:#e2e8f0; padding:2px 6px; border-radius:4px;">${item.sku || item.vendor_part_number || 'N/A'}</code>
+                                ${item.brand ? ` | <strong>Marca:</strong> ${item.brand}` : ''}
+                            </div>
+
+                            ${priceTransfer ? `
+                                <div style="display:flex; gap:16px; align-items:center; background:#f1f5f9; padding:8px 12px; border-radius:6px; margin-bottom:10px;">
+                                    <div>
+                                        <div style="font-size:11px; text-transform:uppercase; color:#15803d; font-weight:700;">Precio Transferencia / Efectivo</div>
+                                        <div style="font-size:16px; font-weight:800; color:#15803d;">${priceTransfer}</div>
+                                    </div>
+                                    <div style="border-left:1px solid #cbd5e1; height:28px;"></div>
+                                    <div>
+                                        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Precio Tarjeta / Normal</div>
+                                        <div style="font-size:16px; font-weight:700; color:var(--navy-900);">${priceNormal}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <div style="display:flex; gap:12px; align-items:center;">
+                                <a href="${item.product_url}" target="_blank" class="btn btn-secondary" style="font-size:12px; padding:5px 12px;">
+                                    Ver en Winpy original ↗
+                                </a>
+                                <a href="{{ route('shop.index') }}?q=${encodeURIComponent(item.sku || 'KC3000')}" target="_blank" class="btn btn-primary" style="font-size:12px; padding:5px 12px;">
+                                    Ver en Tienda INEXUS ↗
+                                </a>
+                            </div>
                         </div>
                     </div>
                 `;

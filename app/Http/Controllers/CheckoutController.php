@@ -64,7 +64,13 @@ class CheckoutController extends Controller
         }
 
         $shipping = $subtotal > 150000 ? 0 : 4990;
-        $total = $subtotal + $shipping;
+        $discount = 0;
+
+        if ($request->payment_method === 'transferencia') {
+            $discount = round($subtotal * 0.05);
+        }
+
+        $total = ($subtotal - $discount) + $shipping;
         $tax = round($subtotal * 0.19);
 
         $orderNumber = 'INX-' . strtoupper(Str::random(4)) . '-' . rand(1000, 9999);
@@ -90,6 +96,7 @@ class CheckoutController extends Controller
             'shipping_cost' => $shipping,
             'total' => $total,
             'status' => 'pending',
+            'notes' => $discount > 0 ? "Descuento 5% aplicado por Transferencia Electrónica Directa (-$" . number_format($discount, 0, ',', '.') . " CLP)" : null,
         ]);
 
         foreach ($cart as $productId => $item) {
