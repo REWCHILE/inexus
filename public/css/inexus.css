@@ -1455,6 +1455,55 @@ img {
     color: var(--navy-800);
 }
 
+/* Quote card for products without fixed price */
+.quote-pricing-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+}
+.badge-quote-pill {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.price-quote-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--navy-900);
+    line-height: 1.2;
+}
+.price-quote-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.btn-quick-quote {
+    background: #22c55e;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+}
+.btn-quick-quote:hover {
+    background: #16a34a;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
 /* Detail page dual pricing card (Transferencia vs Tarjetas Differentiator) */
 .dual-pricing-detail-card {
     background: #ffffff;

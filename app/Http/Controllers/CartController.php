@@ -41,6 +41,15 @@ class CartController extends Controller
         $quantity = max(1, (int) $request->input('quantity', 1));
 
         $product = Product::findOrFail($productId);
+        if ($product->regular_price <= 0) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este producto requiere cotización formal previa y no puede ser comprado directamente.'
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'Este producto requiere cotización formal.');
+        }
 
         $cart = $this->getCart();
 

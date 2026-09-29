@@ -12,6 +12,11 @@ class ShopController extends Controller
     {
         $query = Product::where('is_active', true)->with('category');
 
+        // By default, only show products with active price when browsing
+        if (!$request->has('incluir_sin_precio') && !$request->filled('q')) {
+            $query->where('regular_price', '>', 0);
+        }
+
         // Search query
         if ($request->filled('q')) {
             $term = trim($request->get('q'));
@@ -50,13 +55,13 @@ class ShopController extends Controller
             $query->where('regular_price', '<=', (float) $request->get('max_price'));
         }
 
-        // Sorting
+        // Sorting (Prioritize products with real price & stock first)
         $sort = $request->get('orden', 'mas_reciente');
         match ($sort) {
-            'precio_menor' => $query->orderBy('regular_price', 'asc'),
+            'precio_menor' => $query->where('regular_price', '>', 0)->orderBy('regular_price', 'asc'),
             'precio_mayor' => $query->orderBy('regular_price', 'desc'),
             'nombre_az' => $query->orderBy('name', 'asc'),
-            default => $query->latest(),
+            default => $query->orderByRaw('CASE WHEN stock > 0 AND regular_price > 0 THEN 1 WHEN regular_price > 0 THEN 2 ELSE 3 END')->latest(),
         };
 
         $products = $query->paginate(12)->withQueryString();
@@ -75,8 +80,23 @@ class ShopController extends Controller
             ]);
         }
 
-        $categories = Category::where('is_active', true)->has('products')->withCount('products')->orderBy('name')->get();
-        $brands = Product::where('is_active', true)->whereNotNull('brand')->where('brand', '!=', '')->distinct()->orderBy('brand')->pluck('brand');
+        $categories = Category::where('is_active', true)
+            ->whereHas('products', function ($q) {
+                $q->where('regular_price', '>', 0);
+            })
+            ->withCount(['products' => function ($q) {
+                $q->where('regular_price', '>', 0);
+            }])
+            ->orderBy('name')
+            ->get();
+
+        $brands = Product::where('is_active', true)
+            ->where('regular_price', '>', 0)
+            ->whereNotNull('brand')
+            ->where('brand', '!=', '')
+            ->distinct()
+            ->orderBy('brand')
+            ->pluck('brand');
 
         $currentCategory = $request->filled('categoria') 
             ? Category::where('slug', $request->get('categoria'))->first() 

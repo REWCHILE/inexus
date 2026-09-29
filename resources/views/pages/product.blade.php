@@ -117,70 +117,99 @@
                     </p>
                 @endif
 
-                <!-- Dual Pricing Differentiated Box (Transferencia vs Tarjeta) -->
-                <div class="dual-pricing-detail-card">
-                    <div class="dual-pricing-grid-compare">
-                        
-                        <!-- 1. Transferencia / Efectivo (Highlight Card) -->
-                        <div class="price-transfer-card">
-                            <div class="price-card-header">
-                                <span class="price-badge-discount">🔥 {{ $product->transfer_discount_percentage }}% DCTO</span>
-                                <span class="price-label-primary">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><rect x="9" y="9" width="13" height="12" rx="2"></rect><circle cx="15.5" cy="15" r="2"></circle></svg>
-                                    Transferencia / Efectivo
-                                </span>
+                @if($product->regular_price > 0)
+                    <!-- Dual Pricing Differentiated Box (Transferencia vs Tarjeta) -->
+                    <div class="dual-pricing-detail-card">
+                        <div class="dual-pricing-grid-compare">
+                            
+                            <!-- 1. Transferencia / Efectivo (Highlight Card) -->
+                            <div class="price-transfer-card">
+                                <div class="price-card-header">
+                                    <span class="price-badge-discount">🔥 {{ $product->transfer_discount_percentage }}% DCTO</span>
+                                    <span class="price-label-primary">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><rect x="9" y="9" width="13" height="12" rx="2"></rect><circle cx="15.5" cy="15" r="2"></circle></svg>
+                                        Transferencia / Efectivo
+                                    </span>
+                                </div>
+                                <div class="pricing-current-transfer">{{ $product->formatted_transfer_price }}</div>
+                                <div class="price-savings-note">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Ahorras <strong>{{ $product->formatted_transfer_savings }}</strong> pagando directo</span>
+                                </div>
                             </div>
-                            <div class="pricing-current-transfer">{{ $product->formatted_transfer_price }}</div>
-                            <div class="price-savings-note">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Ahorras <strong>{{ $product->formatted_transfer_savings }}</strong> pagando directo</span>
+
+                            <!-- 2. Tarjeta / Webpay / Mercado Pago Card -->
+                            <div class="price-normal-card">
+                                <div class="price-card-header">
+                                    <span class="price-label-secondary">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                        Tarjeta / Webpay / Otros
+                                    </span>
+                                </div>
+                                <div class="pricing-normal">{{ $product->formatted_normal_price }}</div>
+                                <div class="price-card-note">
+                                    Hasta 12 cuotas con Mercado Pago
+                                </div>
                             </div>
+
                         </div>
 
-                        <!-- 2. Tarjeta / Webpay / Mercado Pago Card -->
-                        <div class="price-normal-card">
-                            <div class="price-card-header">
-                                <span class="price-label-secondary">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                                    Tarjeta / Webpay / Otros
-                                </span>
-                            </div>
-                            <div class="pricing-normal">{{ $product->formatted_normal_price }}</div>
-                            <div class="price-card-note">
-                                Hasta 12 cuotas con Mercado Pago
-                            </div>
+                        <div class="dual-pricing-footer-note">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Precios incluyen IVA (19%) | Factura Electrónica disponible para empresas con RUT y Giro</span>
                         </div>
-
                     </div>
 
-                    <div class="dual-pricing-footer-note">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Precios incluyen IVA (19%) | Factura Electrónica disponible para empresas con RUT y Giro</span>
-                    </div>
-                </div>
+                    <!-- Add to cart Form -->
+                    <form action="{{ route('cart.add') }}" method="POST" class="ajax-add-to-cart-form" style="margin-bottom: 30px;">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
 
-                <!-- Add to cart Form -->
-                <form action="{{ route('cart.add') }}" method="POST" class="ajax-add-to-cart-form" style="margin-bottom: 30px;">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+                            <div style="display:flex; align-items:center; border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden; background:#ffffff;">
+                                <button type="button" onclick="const q = document.getElementById('qty-input'); if(q.value > 1) q.value--;" style="width:38px; height:44px; background:#f8fafc; border:none; cursor:pointer; font-weight:700; font-size:16px;">-</button>
+                                <input type="number" id="qty-input" name="quantity" value="1" min="1" max="{{ max(1, $product->stock) }}" style="width:50px; height:44px; border:none; text-align:center; font-weight:700; font-size:15px;">
+                                <button type="button" onclick="const q = document.getElementById('qty-input'); q.value++;" style="width:38px; height:44px; background:#f8fafc; border:none; cursor:pointer; font-weight:700; font-size:16px;">+</button>
+                            </div>
 
-                    <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
-                        <div style="display:flex; align-items:center; border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden; background:#ffffff;">
-                            <button type="button" onclick="const q = document.getElementById('qty-input'); if(q.value > 1) q.value--;" style="width:38px; height:44px; background:#f8fafc; border:none; cursor:pointer; font-weight:700; font-size:16px;">-</button>
-                            <input type="number" id="qty-input" name="quantity" value="1" min="1" max="{{ max(1, $product->stock) }}" style="width:50px; height:44px; border:none; text-align:center; font-weight:700; font-size:15px;">
-                            <button type="button" onclick="const q = document.getElementById('qty-input'); q.value++;" style="width:38px; height:44px; background:#f8fafc; border:none; cursor:pointer; font-weight:700; font-size:16px;">+</button>
+                            <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
+                                <span>Agregar al Carrito</span>
+                            </button>
                         </div>
-
-                        <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="9" cy="21" r="1"></circle>
-                                <circle cx="20" cy="21" r="1"></circle>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </form>
+                @else
+                    <!-- Quote Request Card (For items requiring custom quotation) -->
+                    <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:var(--radius-xl); padding:24px; margin-bottom:28px;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                            <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; text-transform:uppercase;">Producto a Cotizar</span>
+                            <span style="font-size:12px; color:var(--text-muted);">Sujeto a confirmación con ejecutivo</span>
+                        </div>
+                        <div style="font-size:24px; font-weight:800; color:var(--navy-900); margin-bottom:8px;">
+                            Precio a Consultar
+                        </div>
+                        <p style="font-size:13.5px; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">
+                            Este ítem o contrato de licenciamiento corporativo requiere cotización formal directa con nuestro equipo de ventas según volumen y condiciones de Ingram Micro.
+                        </p>
+                        @php
+                            $waQuoteBtnText = urlencode("Hola INEXUS, deseo solicitar cotización formal para el producto:\n*{$product->name}*\nSKU: {$product->sku}\nEnlace: " . url()->current());
+                        @endphp
+                        <a href="https://wa.me/56987654321?text={{ $waQuoteBtnText }}" 
+                           target="_blank" 
+                           rel="noopener" 
+                           class="btn btn-whatsapp-product btn-block" 
+                           style="display:flex; align-items:center; justify-content:center; gap:10px; font-weight:700; padding:14px; background:#22c55e; color:#ffffff; border-radius:8px; text-decoration:none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.01.815 3.094.815 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.766-5.768-5.766zm9.969 5.766c0 5.518-4.482 10-10 10-1.748 0-3.385-.45-4.815-1.238l-7.185 1.886 1.92-7.009c-.846-1.47-1.32-3.179-1.32-4.999 0-5.518 4.482-10 10-10 5.518 0 10 4.482 10 10z"/>
                             </svg>
-                            <span>Agregar al Carrito</span>
-                        </button>
+                            <span>Solicitar Cotización por WhatsApp</span>
+                        </a>
                     </div>
-                </form>
+                @endif
 
                 <!-- Product WhatsApp Inquiry Button -->
                 @php
