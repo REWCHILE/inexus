@@ -68,8 +68,10 @@ document.addEventListener('submit', (e) => {
     const form = e.target;
     if (
         form.classList.contains('ajax-add-to-cart') || 
+        form.classList.contains('ajax-add-to-cart-form') || 
         form.hasAttribute('data-no-loader') ||
-        form.classList.contains('no-loader')
+        form.classList.contains('no-loader') ||
+        (form.action && form.action.includes('/carrito/agregar'))
     ) {
         return;
     }
@@ -345,6 +347,11 @@ document.addEventListener('DOMContentLoaded', () => {
             form.setAttribute('data-bound', 'true');
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.hidePageLoader === 'function') {
+                    window.hidePageLoader();
+                }
+
                 const submitBtn = form.querySelector('button[type="submit"]');
                 const originalText = submitBtn ? submitBtn.innerHTML : '';
                 if (submitBtn) {

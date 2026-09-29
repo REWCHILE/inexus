@@ -161,7 +161,7 @@
                     </div>
 
                     <!-- Add to cart Form -->
-                    <form action="{{ route('cart.add') }}" method="POST" class="ajax-add-to-cart-form" style="margin-bottom: 30px;">
+                    <form action="{{ route('cart.add') }}" method="POST" class="ajax-add-to-cart ajax-add-to-cart-form" data-no-loader style="margin-bottom: 30px;">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
 
