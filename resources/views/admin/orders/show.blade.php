@@ -92,6 +92,11 @@
                     @if($order->shipping_notes)
                         <p style="color:var(--text-muted); font-style:italic;"><strong>Instrucciones:</strong> {{ $order->shipping_notes }}</p>
                     @endif
+                    @if($order->notes)
+                        <div style="margin-top:10px; padding:10px 12px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; font-size:12.5px; color:#0369a1;">
+                            <strong>📦 Detalle de Envío:</strong> {{ $order->notes }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

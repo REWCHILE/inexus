@@ -104,34 +104,62 @@
                     <div class="checkout-card">
                         <h2 class="checkout-card-title">
                             <span style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">3</span>
-                            Dirección de Despacho
+                            Dirección de Despacho y Courier
                         </h2>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label" for="shipping_region">Región *</label>
-                                <select id="shipping_region" name="shipping_region" class="form-control" required>
-                                    <option value="Región Metropolitana de Santiago" selected>Región Metropolitana de Santiago</option>
-                                    <option value="Región de Valparaíso">Región de Valparaíso</option>
-                                    <option value="Región del Biobío">Región del Biobío</option>
-                                    <option value="Región de Antofagasta">Región de Antofagasta</option>
-                                    <option value="Región de Coquimbo">Región de Coquimbo</option>
-                                    <option value="Región de O'Higgins">Región del Libertador General Bernardo O'Higgins</option>
-                                    <option value="Región del Maule">Región del Maule</option>
-                                    <option value="Región de La Araucanía">Región de La Araucanía</option>
-                                    <option value="Región de Los Lagos">Región de Los Lagos</option>
-                                    <option value="Otras Regiones">Otras Regiones de Chile</option>
+                                <label class="form-label" for="shipping_region">Región de Destino *</label>
+                                <select id="shipping_region" name="shipping_region_code" class="form-control" required onchange="handleRegionChange(this.value)">
+                                    @foreach($regions as $rCode => $rData)
+                                        <option value="{{ $rCode }}" {{ $rCode === $initialRegion ? 'selected' : '' }}>
+                                            {{ $rData['name'] }}
+                                        </option>
+                                    @endforeach
                                 </select>
+                                <input type="hidden" name="shipping_region" id="shipping_region_name" value="{{ $regions[$initialRegion]['name'] ?? 'Región Metropolitana de Santiago' }}">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="shipping_city">Comuna / Ciudad *</label>
-                                <input type="text" id="shipping_city" name="shipping_city" class="form-control" required placeholder="Ej: Providencia, Santiago, Las Condes..." value="{{ old('shipping_city') }}">
+                                <label class="form-label" for="shipping_city">Comuna de Entrega *</label>
+                                <select id="shipping_city" name="shipping_city" class="form-control" required onchange="handleCommuneChange(this.value)">
+                                    @foreach($communes as $commune)
+                                        <option value="{{ $commune['name'] }}" {{ $commune['name'] === $initialCommune ? 'selected' : '' }}>
+                                            {{ $commune['name'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <!-- Blue Express Rate Card -->
+                        <div id="bluex-rate-card" style="margin-top:14px; background:#f8fafc; border:1.5px solid #0033a1; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 1px 3px rgba(0,51,161,0.06);">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="width:44px; height:44px; border-radius:8px; background:#fff; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; padding:4px; flex-shrink:0; box-shadow:0 2px 4px rgba(0,0,0,0.04);">
+                                    <img src="{{ asset('images/blue-express.svg') }}" alt="Blue Express" style="max-height:34px; max-width:34px; object-fit:contain;">
+                                </div>
+                                <div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-weight:700; color:#0033a1; font-size:14.5px;" id="bx-service-name">{{ $shippingServiceName }}</span>
+                                        <span class="badge" style="background:#0033a1; color:#fff; font-size:10.5px; padding:2px 7px; border-radius:4px; font-weight:600;">Courier Oficial</span>
+                                    </div>
+                                    <div style="font-size:12.5px; color:#64748b; margin-top:2px;" id="bx-promise-display">
+                                        ⚡ Tiempo estimado: <strong style="color:#0f172a;" id="bx-promise-text">{{ $shippingPromise }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div id="bx-cost-badge" style="font-size:18px; font-weight:800; font-family:'Plus Jakarta Sans'; color:{{ $shipping === 0 ? '#16a34a' : '#0033a1' }};">
+                                    {{ $shipping === 0 ? 'GRATIS' : '$' . number_format($shipping, 0, ',', '.') . ' CLP' }}
+                                </div>
+                                <div id="bx-loading-spinner" style="display:none; font-size:11.5px; color:#0284c7; align-items:center; gap:4px; justify-content:flex-end;">
+                                    <svg style="animation: spin 1s linear infinite;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Cotizando...
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top:16px;">
                             <label class="form-label" for="shipping_address">Dirección (Calle y Número) *</label>
-                            <input type="text" id="shipping_address" name="shipping_address" class="form-control" required placeholder="Ej: Av. Andrés Bello 2457" value="{{ old('shipping_address') }}">
+                            <input type="text" id="shipping_address" name="shipping_address" class="form-control" required placeholder="Ej: Av. Andrés Bello 2457, Providencia" value="{{ old('shipping_address') }}">
                         </div>
 
                         <div class="form-group">
@@ -219,8 +247,8 @@
                             </div>
 
                             <div style="display:flex; justify-content:space-between;">
-                                <span style="color:var(--text-muted);">Despacho Express:</span>
-                                <span style="font-weight:600; color:{{ $shipping === 0 ? '#166534' : 'var(--text-main)' }};">
+                                <span style="color:var(--text-muted);">Despacho Blue Express:</span>
+                                <span id="summary-shipping-display" style="font-weight:700; color:{{ $shipping === 0 ? '#166534' : 'var(--text-main)' }};">
                                     {{ $shipping === 0 ? 'GRATIS' : '$' . number_format($shipping, 0, ',', '.') . ' CLP' }}
                                 </span>
                             </div>
@@ -259,36 +287,138 @@
 @section('scripts')
 <script>
     const baseSubtotal = {{ $subtotal }};
-    const shippingCost = {{ $shipping }};
-    const transferDiscountAmount = Math.round(baseSubtotal * 0.05);
+    let currentShippingCost = {{ $shipping }};
+    let currentPaymentMethod = 'mercadopago';
+
+    function updateTotals() {
+        const discountRow = document.getElementById('transfer-discount-row');
+        const discountVal = document.getElementById('transfer-discount-val');
+        const totalDisplay = document.getElementById('final-total-display');
+        const shippingDisplay = document.getElementById('summary-shipping-display');
+
+        let discount = 0;
+        if (currentPaymentMethod === 'transferencia') {
+            discount = Math.round(baseSubtotal * 0.05);
+            discountRow.style.display = 'flex';
+            discountVal.innerText = '-$' + discount.toLocaleString('es-CL') + ' CLP';
+        } else {
+            discountRow.style.display = 'none';
+        }
+
+        const total = (baseSubtotal - discount) + currentShippingCost;
+        totalDisplay.innerText = '$' + total.toLocaleString('es-CL') + ' CLP';
+        totalDisplay.style.color = currentPaymentMethod === 'transferencia' ? '#15803d' : 'var(--primary)';
+
+        if (currentShippingCost === 0) {
+            shippingDisplay.innerText = 'GRATIS';
+            shippingDisplay.style.color = '#166534';
+        } else {
+            shippingDisplay.innerText = '$' + currentShippingCost.toLocaleString('es-CL') + ' CLP';
+            shippingDisplay.style.color = 'var(--text-main)';
+        }
+    }
 
     function handlePaymentMethodChange(method) {
+        currentPaymentMethod = method;
         const mpLabel = document.getElementById('label-method-mp');
         const tfLabel = document.getElementById('label-method-tf');
-        const discountRow = document.getElementById('transfer-discount-row');
-        const totalDisplay = document.getElementById('final-total-display');
 
         if (method === 'transferencia') {
             tfLabel.style.border = '2px solid #16a34a';
             tfLabel.style.background = '#f0fdf4';
             mpLabel.style.border = '1px solid var(--border-color)';
             mpLabel.style.background = '#ffffff';
-
-            discountRow.style.display = 'flex';
-            const newTotal = (baseSubtotal - transferDiscountAmount) + shippingCost;
-            totalDisplay.innerText = '$' + newTotal.toLocaleString('es-CL') + ' CLP';
-            totalDisplay.style.color = '#15803d';
         } else {
             mpLabel.style.border = '2px solid var(--primary)';
             mpLabel.style.background = '#f0f9ff';
             tfLabel.style.border = '1px solid var(--border-color)';
             tfLabel.style.background = '#ffffff';
-
-            discountRow.style.display = 'none';
-            const normalTotal = baseSubtotal + shippingCost;
-            totalDisplay.innerText = '$' + normalTotal.toLocaleString('es-CL') + ' CLP';
-            totalDisplay.style.color = 'var(--primary)';
         }
+        updateTotals();
+    }
+
+    function handleRegionChange(regionCode) {
+        const regionSelect = document.getElementById('shipping_region');
+        const regionNameInput = document.getElementById('shipping_region_name');
+        regionNameInput.value = regionSelect.options[regionSelect.selectedIndex].text.trim();
+
+        const citySelect = document.getElementById('shipping_city');
+        citySelect.innerHTML = '<option value="">Cargando comunas...</option>';
+        citySelect.disabled = true;
+
+        fetch('{{ url("/checkout/communes") }}/' + regionCode)
+            .then(response => response.json())
+            .then(data => {
+                citySelect.innerHTML = '';
+                if (data.communes && data.communes.length > 0) {
+                    data.communes.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.name;
+                        opt.textContent = c.name;
+                        citySelect.appendChild(opt);
+                    });
+                    citySelect.disabled = false;
+                    handleCommuneChange(data.communes[0].name);
+                } else {
+                    citySelect.innerHTML = '<option value="Principal">Principal</option>';
+                    citySelect.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error('Error loading communes:', err);
+                citySelect.disabled = false;
+            });
+    }
+
+    let quoteTimeout = null;
+    function handleCommuneChange(communeName) {
+        if (!communeName) return;
+        const regionCode = document.getElementById('shipping_region').value;
+
+        const spinner = document.getElementById('bx-loading-spinner');
+        const costBadge = document.getElementById('bx-cost-badge');
+        const promiseText = document.getElementById('bx-promise-text');
+        const serviceName = document.getElementById('bx-service-name');
+
+        spinner.style.display = 'inline-flex';
+        costBadge.style.opacity = '0.4';
+
+        clearTimeout(quoteTimeout);
+        quoteTimeout = setTimeout(() => {
+            fetch('{{ route("checkout.quote_shipping") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    region_code: regionCode,
+                    commune_name: communeName,
+                    payment_method: currentPaymentMethod
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                spinner.style.display = 'none';
+                costBadge.style.opacity = '1';
+
+                if (res.success) {
+                    currentShippingCost = res.shipping_cost;
+                    costBadge.innerText = res.shipping_formatted;
+                    costBadge.style.color = res.shipping_cost === 0 ? '#16a34a' : '#0033a1';
+                    promiseText.innerText = res.promise_day;
+                    if (res.service_name) {
+                        serviceName.innerText = res.service_name;
+                    }
+                    updateTotals();
+                }
+            })
+            .catch(err => {
+                console.error('Quote error:', err);
+                spinner.style.display = 'none';
+                costBadge.style.opacity = '1';
+            });
+        }, 200);
     }
 </script>
 @endsection
