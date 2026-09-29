@@ -4,6 +4,16 @@
 
 @section('content')
 
+@php
+    $regions = $regions ?? app(\App\Services\BlueExpressService::class)->getRegions();
+    $initialRegion = $initialRegion ?? 'CL-RM';
+    $communes = $communes ?? app(\App\Services\BlueExpressService::class)->getCommunesByRegion($initialRegion);
+    $initialCommune = $initialCommune ?? 'Santiago';
+    $shippingServiceName = $shippingServiceName ?? 'Blue Express Express (Terrestre)';
+    $shippingPromise = $shippingPromise ?? 'Hasta 2 días hábiles';
+    $isFreeShipping = $isFreeShipping ?? ($subtotal >= 150000);
+@endphp
+
     <!-- Breadcrumb bar -->
     <div style="background:#f1f5f9; padding: 14px 0; border-bottom: 1px solid var(--border-color);">
         <div class="container" style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted);">

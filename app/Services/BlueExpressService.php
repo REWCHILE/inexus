@@ -16,10 +16,17 @@ class BlueExpressService
 
     public function __construct()
     {
-        $this->baseUrl = trim((string) Setting::get('bluex_base_url', 'https://eplin.api.blue.cl'));
-        $this->apiKey = trim((string) Setting::get('bluex_api_key', 'QUoO07ZRZ12tzkkF8yJM9am7uhxUJCbR7f6kU5Dz'));
-        $this->originDistrict = trim((string) Setting::get('bluex_origin_district', 'SCL'));
-        $this->originRegion = (int) Setting::get('bluex_origin_region', 13);
+        try {
+            $this->baseUrl = trim((string) Setting::get('bluex_base_url', 'https://eplin.api.blue.cl'));
+            $this->apiKey = trim((string) Setting::get('bluex_api_key', 'QUoO07ZRZ12tzkkF8yJM9am7uhxUJCbR7f6kU5Dz'));
+            $this->originDistrict = trim((string) Setting::get('bluex_origin_district', 'SCL'));
+            $this->originRegion = (int) Setting::get('bluex_origin_region', 13);
+        } catch (\Throwable $e) {
+            $this->baseUrl = 'https://eplin.api.blue.cl';
+            $this->apiKey = 'QUoO07ZRZ12tzkkF8yJM9am7uhxUJCbR7f6kU5Dz';
+            $this->originDistrict = 'SCL';
+            $this->originRegion = 13;
+        }
     }
 
     /**
@@ -406,7 +413,11 @@ class BlueExpressService
      */
     public function quoteShipping(string $regionCode, string $communeName, array $cart = [], float $subtotal = 0.0): array
     {
-        $freeShippingThreshold = (float) Setting::get('free_shipping_threshold', 150000);
+        try {
+            $freeShippingThreshold = (float) Setting::get('free_shipping_threshold', 150000);
+        } catch (\Throwable $e) {
+            $freeShippingThreshold = 150000.0;
+        }
         $isFree = $subtotal >= $freeShippingThreshold && $subtotal > 0;
 
         // Resolve destination district & region

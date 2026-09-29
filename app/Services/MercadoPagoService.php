@@ -15,9 +15,15 @@ class MercadoPagoService
 
     public function __construct()
     {
-        $this->accessToken = trim((string) Setting::get('mercadopago_access_token', 'TEST-74928192837491-092812-inexus-token-chile'));
-        $this->publicKey = trim((string) Setting::get('mercadopago_public_key', 'TEST-pub-key-inexus'));
-        $this->isSandbox = (bool) Setting::get('mercadopago_sandbox', true);
+        try {
+            $this->accessToken = trim((string) Setting::get('mercadopago_access_token', 'TEST-74928192837491-092812-inexus-token-chile'));
+            $this->publicKey = trim((string) Setting::get('mercadopago_public_key', 'TEST-pub-key-inexus'));
+            $this->isSandbox = (bool) Setting::get('mercadopago_sandbox', true);
+        } catch (\Throwable $e) {
+            $this->accessToken = 'TEST-74928192837491-092812-inexus-token-chile';
+            $this->publicKey = 'TEST-pub-key-inexus';
+            $this->isSandbox = true;
+        }
     }
 
     /**
