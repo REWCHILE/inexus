@@ -61,8 +61,22 @@ class ShopController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
 
-        $categories = Category::where('is_active', true)->withCount('products')->get();
-        $brands = Product::whereNotNull('brand')->where('brand', '!=', '')->distinct()->pluck('brand');
+        // AJAX response for Infinite Scrolling
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'html' => view('partials.product_cards', compact('products'))->render(),
+                'has_more' => $products->hasMorePages(),
+                'next_page_url' => $products->nextPageUrl(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'total' => $products->total(),
+                'count' => $products->count(),
+            ]);
+        }
+
+        $categories = Category::where('is_active', true)->has('products')->withCount('products')->orderBy('name')->get();
+        $brands = Product::where('is_active', true)->whereNotNull('brand')->where('brand', '!=', '')->distinct()->orderBy('brand')->pluck('brand');
 
         $currentCategory = $request->filled('categoria') 
             ? Category::where('slug', $request->get('categoria'))->first() 

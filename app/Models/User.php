@@ -21,6 +21,16 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
+        'phone',
+        'rut',
+        'account_type',
+        'company_name',
+        'company_rut',
+        'company_giro',
+        'shipping_address',
+        'shipping_city',
+        'shipping_region',
     ];
 
     /**
@@ -39,6 +49,15 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
+        'is_admin' => 'boolean',
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Customer orders
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'customer_email', 'email');
+    }
 }

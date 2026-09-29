@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+    <defs>
+        <linearGradient id="grad-supplies" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+        </linearGradient>
+    </defs>
+    <!-- Toner Cartridge Body -->
+    <rect x="22" y="32" width="76" height="34" rx="6" stroke="url(#grad-supplies)" stroke-width="3.5" fill="#f0f9ff"/>
+    <!-- Cartridge Handle / Lock -->
+    <path d="M42 32 L42 24 L78 24 L78 32" stroke="url(#grad-supplies)" stroke-width="3" stroke-linecap="round"/>
+    <!-- Roller Cylinder -->
+    <rect x="28" y="42" width="64" height="14" rx="3" stroke="#0284c7" stroke-width="2" fill="#e0f2fe"/>
+    <!-- Roller Grip Lines -->
+    <line x1="38" y1="45" x2="38" y2="53" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="48" y1="45" x2="48" y2="53" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="58" y1="45" x2="58" y2="53" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="68" y1="45" x2="68" y2="53" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="78" y1="45" x2="78" y2="53" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Bottom Ink / Toner Droplet & Color Dots -->
+    <path d="M60 74 C54 82 54 88 60 92 C66 88 66 82 60 74 Z" stroke="url(#grad-supplies)" stroke-width="2.5" fill="#38bdf8"/>
+    <circle cx="38" cy="85" r="4.5" fill="#0284c7"/>
+    <circle cx="82" cy="85" r="4.5" fill="#38bdf8"/>
+    <circle cx="60" cy="85" r="2.5" fill="#ffffff"/>
+</svg>

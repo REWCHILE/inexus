@@ -217,14 +217,18 @@
                     Descarga los productos desde el catálogo de Ingram Micro, calcula los precios en CLP aplicando tus márgenes e ingresa o actualiza el inventario local.
                 </p>
 
-                <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-                    <input type="text" id="sync-keyword" placeholder="Filtro opcional (ej: Notebook, SSD)" class="form-control" style="max-width:240px;">
+                <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
                     <select id="sync-size" class="form-control" style="max-width:140px;">
-                        <option value="20">20 ítems</option>
+                        <option value="10">10 ítems</option>
+                        <option value="25" selected>25 ítems</option>
                         <option value="50">50 ítems</option>
                     </select>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer; font-weight:600; color:var(--text-dark);">
+                        <input type="checkbox" id="sync-enrich" checked style="width:18px; height:18px; accent-color:var(--primary);">
+                        Cruzar y enriquecer automáticamente con Scraper (Fotos + Ficha Técnica + FAQs)
+                    </label>
                     <button type="button" id="btn-run-sync" class="btn btn-primary">
-                        Ejecutar Sincronización Ahora
+                        Ejecutar Sincronización y Cruce
                     </button>
                 </div>
 
@@ -357,13 +361,19 @@
     document.getElementById('btn-run-sync').addEventListener('click', async () => {
         const btn = document.getElementById('btn-run-sync');
         const box = document.getElementById('sync-status-box');
-        const keyword = document.getElementById('sync-keyword').value;
         const pageSize = document.getElementById('sync-size').value;
+        const enrich = document.getElementById('sync-enrich') ? document.getElementById('sync-enrich').checked : true;
 
         btn.disabled = true;
-        btn.innerHTML = 'Sincronizando...';
+        btn.innerHTML = enrich ? 'Sincronizando y Cruzando...' : 'Sincronizando...';
         box.style.display = 'block';
-        box.innerHTML = 'Iniciando proceso de sincronización con Ingram Micro...';
+        box.innerHTML = enrich 
+            ? '<div style="color:var(--primary); font-weight:600;"><i class="fa fa-spinner fa-spin"></i> Conectando con Ingram Micro y cruzando catálogo con fuentes web...</div>'
+            : '<div style="color:var(--primary); font-weight:600;"><i class="fa fa-spinner fa-spin"></i> Conectando con Ingram Micro...</div>';
+
+        if (typeof window.showPageLoader === 'function') {
+            window.showPageLoader(enrich ? 'Sincronizando con Ingram Micro y cruzando catálogo...' : 'Sincronizando con Ingram Micro...');
+        }
 
         try {
             const res = await fetch("{{ route('admin.ingram.sync') }}", {
@@ -372,7 +382,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-                body: JSON.stringify({ keyword, page_size: pageSize })
+                body: JSON.stringify({ page_size: pageSize, enrich: enrich })
             });
             const data = await res.json();
             if (data.success) {
@@ -380,12 +390,14 @@
                 setTimeout(() => location.reload(), 2000);
             } else {
                 box.innerHTML = `<div style="color:#b91c1c; font-weight:700;">✕ ${data.message}</div>`;
+                if (typeof window.hidePageLoader === 'function') window.hidePageLoader();
             }
         } catch (e) {
             box.innerHTML = `<div style="color:#b91c1c;">Error: ${e.message}</div>`;
+            if (typeof window.hidePageLoader === 'function') window.hidePageLoader();
         } finally {
             btn.disabled = false;
-            btn.innerHTML = 'Ejecutar Sincronización Ahora';
+            btn.innerHTML = 'Ejecutar Sincronización y Cruce';
         }
     });
 </script>

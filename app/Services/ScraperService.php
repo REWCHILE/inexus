@@ -287,19 +287,199 @@ class ScraperService
     }
 
     /**
+     * Query Chilean Hardware/Tech Catalog (api.solotodo.com) for real-time enrichments
+     */
+    public function queryTechCatalog(string $identifier, string $brand = '', string $name = ''): ?array
+    {
+        $searchTerms = [];
+        $cleanVpn = trim(str_replace(['/', '-', '_'], ' ', $identifier));
+        if (!empty($identifier)) {
+            $searchTerms[] = $identifier;
+            if (Str::contains($identifier, '/')) {
+                $searchTerms[] = str_replace('/', '', $identifier);
+                $searchTerms[] = explode('/', $identifier)[0];
+            }
+        }
+        if (!empty($name)) {
+            $cleanName = preg_replace('/[^a-zA-Z0-9\s]/', ' ', $name);
+            $searchTerms[] = trim($cleanName);
+        }
+
+        foreach (array_unique($searchTerms) as $term) {
+            if (strlen($term) < 3) continue;
+
+            $url = "https://api.solotodo.com/products/browse/?search=" . urlencode($term);
+            try {
+                $response = Http::timeout(12)
+                    ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'])
+                    ->get($url);
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    if (!empty($json['results'][0]['product_entries'][0])) {
+                        $entry = $json['results'][0]['product_entries'][0];
+                        $p = $entry['product'] ?? [];
+                        $productId = $p['id'] ?? null;
+
+                        // Fetch store entities (gallery photos & store pricing)
+                        $gallery = [];
+                        $winpyOffer = null;
+
+                        if ($productId) {
+                            try {
+                                $entRes = Http::timeout(10)
+                                    ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                                    ->get("https://api.solotodo.com/products/{$productId}/entities/");
+
+                                if ($entRes->successful()) {
+                                    $entities = $entRes->json();
+                                    foreach ($entities as $e) {
+                                        if (!empty($e['picture_urls']) && is_array($e['picture_urls'])) {
+                                            foreach ($e['picture_urls'] as $pic) {
+                                                if (!in_array($pic, $gallery) && count($gallery) < 6) {
+                                                    $gallery[] = $pic;
+                                                }
+                                            }
+                                        }
+                                        if (!empty($e['external_url']) && Str::contains($e['external_url'], 'winpy.cl')) {
+                                            $winpyOffer = $e;
+                                        }
+                                    }
+                                }
+                            } catch (\Throwable $e) {
+                                // Silent fail for secondary entity fetch
+                            }
+                        }
+
+                        // Parse technical specifications
+                        $specs = [];
+                        if (!empty($p['specs']) && is_array($p['specs'])) {
+                            $rawSpecs = $p['specs'];
+                            
+                            $map = [
+                                'brand_unicode' => 'Marca',
+                                'commercial_model' => 'Modelo Comercial',
+                                'line_unicode' => 'Línea / Familia',
+                                'part_number' => 'Número de Parte (P/N)',
+                                // Storage / SSD
+                                'capacity_unicode' => 'Capacidad',
+                                'ssd_type_connector_name' => 'Formato',
+                                'ssd_type_bus_name' => 'Interfaz / Bus',
+                                'controller_unicode' => 'Controlador',
+                                'nand_type_unicode' => 'Memoria NAND',
+                                'pretty_sequential_read_speed' => 'Lectura Secuencial',
+                                'pretty_sequential_write_speed' => 'Escritura Secuencial',
+                                // Notebooks & PCs
+                                'processor_unicode' => 'Procesador',
+                                'ram_quantity_unicode' => 'Memoria RAM',
+                                'ram_type_unicode' => 'Tipo de Memoria RAM',
+                                'screen_size_unicode' => 'Tamaño de Pantalla',
+                                'screen_resolution_unicode' => 'Resolución de Pantalla',
+                                'screen_refresh_rate_unicode' => 'Tasa de Refresco',
+                                'gpu_unicode' => 'Tarjeta Gráfica',
+                                'dedicated_video_card_unicode' => 'Gráficos Dedicados',
+                                'operating_system_unicode' => 'Sistema Operativo',
+                                'weight_unicode' => 'Peso',
+                                'battery_unicode' => 'Batería',
+                                'color_unicode' => 'Color',
+                                // Monitors
+                                'panel_type_unicode' => 'Tipo de Panel',
+                                'contrast_ratio_unicode' => 'Contraste',
+                                'brightness_unicode' => 'Brillo',
+                                'response_time_unicode' => 'Tiempo de Respuesta',
+                                // Peripherals
+                                'connectivity_unicode' => 'Conectividad',
+                                'layout_unicode' => 'Distribución Teclado',
+                                'dpi_unicode' => 'Resolución Sensor (DPI)',
+                            ];
+
+                            foreach ($map as $key => $label) {
+                                if (!empty($rawSpecs[$key])) {
+                                    $specs[$label] = (string) $rawSpecs[$key];
+                                }
+                            }
+
+                            if (isset($rawSpecs['has_dram'])) {
+                                $specs['Caché DRAM'] = $rawSpecs['has_dram'] ? 'Sí (Integrada)' : 'No';
+                            }
+
+                            // Dynamic fallback for any other meaningful specs
+                            foreach ($rawSpecs as $k => $v) {
+                                if (is_string($v) && !empty($v) && count($specs) < 16) {
+                                    if (Str::endsWith($k, '_unicode') && !in_array($k, array_keys($map))) {
+                                        $label = Str::title(str_replace(['_unicode', '_'], ['', ' '], $k));
+                                        $specs[$label] = $v;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Convert Markdown to clean HTML for description if present
+                        $descHtml = null;
+                        if (!empty($p['description'])) {
+                            $descHtml = Str::markdown($p['description']);
+                        }
+
+                        $mainImage = $p['picture_url'] ?? (!empty($gallery) ? $gallery[0] : null);
+
+                        return [
+                            'source' => $winpyOffer ? 'winpy' : 'solotodo',
+                            'product_id' => $productId,
+                            'title' => $p['name'] ?? null,
+                            'brand' => $p['specs']['brand_unicode'] ?? $brand ?: 'Tecnología',
+                            'short_description' => $p['short_description'] ?? null,
+                            'description' => $descHtml,
+                            'main_image' => $mainImage,
+                            'gallery' => $gallery,
+                            'specifications' => $specs,
+                            'market_normal_price' => $entry['metadata']['prices_per_currency'][0]['normal_price'] ?? null,
+                            'market_offer_price' => $entry['metadata']['prices_per_currency'][0]['offer_price'] ?? null,
+                            'winpy_url' => $winpyOffer['external_url'] ?? null,
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Catalog query error on term '{$term}': " . $e->getMessage());
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Comprehensive Scraper: iterates enabled sources until finding clean, coherent image & description
      */
     public function scrapeProduct(Product $product): array
     {
-        $sku = trim((string) ($product->vendor_part_number ?: $product->sku));
+        $vpn = trim((string) ($product->vendor_part_number ?: ''));
+        $sku = trim((string) $product->sku);
         $name = trim((string) $product->name);
+        $brand = trim((string) ($product->brand ?: ''));
 
+        // 1. Try Chilean Hardware/Tech Catalog (Winpy / SoloTodo API)
         $result = null;
+        if (!empty($vpn)) {
+            $catData = $this->queryTechCatalog($vpn, $brand, $name);
+            if (!empty($catData['main_image'])) {
+                $result = [
+                    'source' => $catData['source'],
+                    'product_url' => $catData['winpy_url'] ?? null,
+                    'image_url' => $catData['main_image'],
+                    'gallery' => $catData['gallery'] ?? [],
+                    'description' => $catData['description'] ?? null,
+                    'short_description' => $catData['short_description'] ?? null,
+                    'specifications' => $catData['specifications'] ?? [],
+                    'title' => $catData['title'] ?? null,
+                ];
+            }
+        }
 
-        // Try SPDigital first
-        $result = $this->scrapeSpDigital($sku, $name);
+        // 2. Try SPDigital
+        if (empty($result['image_url'])) {
+            $result = $this->scrapeSpDigital($sku, $name);
+        }
 
-        // Fallback to MercadoLibre if no image found
+        // 3. Fallback to MercadoLibre
         if (empty($result['image_url'])) {
             $mlResult = $this->scrapeMercadoLibre($sku, $name);
             if (!empty($mlResult['image_url'])) {
@@ -310,6 +490,18 @@ class ScraperService
         // Evaluate if coherent image was found
         if (!empty($result['image_url'])) {
             $product->main_image = $result['image_url'];
+            if (!empty($result['gallery']) && is_array($result['gallery'])) {
+                $product->gallery = array_values(array_unique($result['gallery']));
+            }
+            if (!empty($result['specifications']) && is_array($result['specifications'])) {
+                $product->specifications = $result['specifications'];
+            }
+            if (!empty($result['title']) && (Str::length($product->name) < 25 || Str::contains($product->name, ['-AME', 'IM-']))) {
+                $product->name = $result['title'];
+            }
+            if (!empty($result['short_description'])) {
+                $product->short_description = $result['short_description'];
+            }
             $product->scraper_source = $result['source'];
             $product->scraper_status = 'found';
             $product->scraper_last_run = now();

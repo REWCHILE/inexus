@@ -29,6 +29,7 @@ Route::get('/producto/{slug}', [ProductController::class, 'show'])->name('produc
 
 // Cart
 Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
+Route::get('/carrito/drawer-html', [CartController::class, 'drawerHtml'])->name('cart.drawer');
 Route::post('/carrito/agregar', [CartController::class, 'add'])->name('cart.add');
 Route::post('/carrito/actualizar', [CartController::class, 'update'])->name('cart.update');
 Route::post('/carrito/eliminar', [CartController::class, 'remove'])->name('cart.remove');
@@ -52,6 +53,20 @@ Route::get('/faqs', [PageController::class, 'faqs'])->name('page.faqs');
 Route::get('/contacto', [PageController::class, 'contact'])->name('page.contact');
 Route::post('/contacto', [PageController::class, 'contactSubmit'])->name('page.contact.submit');
 Route::get('/sitemap.xml', [PageController::class, 'sitemap'])->name('page.sitemap');
+
+// Customer Authentication & Account
+use App\Http\Controllers\CustomerAuthController;
+
+Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
+Route::get('/registro', [CustomerAuthController::class, 'showRegister'])->name('register');
+Route::post('/registro', [CustomerAuthController::class, 'register'])->name('register.submit');
+Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/mi-cuenta', [CustomerAuthController::class, 'account'])->name('customer.account');
+    Route::put('/mi-cuenta', [CustomerAuthController::class, 'updateProfile'])->name('customer.account.update');
+});
 
 // Admin Authentication
 Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
@@ -84,6 +99,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/scraper', [AdminScraperController::class, 'index'])->name('scraper.index');
     Route::post('/scraper/test', [AdminScraperController::class, 'testScrape'])->name('scraper.test');
     Route::post('/scraper/batch', [AdminScraperController::class, 'runBatch'])->name('scraper.batch');
+    Route::post('/scraper/cross-match', [AdminScraperController::class, 'crossMatch'])->name('scraper.cross-match');
     Route::post('/scraper/apply', [AdminScraperController::class, 'applyToProduct'])->name('scraper.apply');
 
     // Orders

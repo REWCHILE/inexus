@@ -46,9 +46,39 @@
             
             <!-- Gallery / Image Box -->
             <div>
-                <div class="product-gallery-container">
+                <div class="product-gallery-container" id="product-gallery-container">
+                    @if(count($product->gallery_images) > 1)
+                        <button type="button" class="gallery-arrow-btn gallery-prev" id="gallery-prev-btn" aria-label="Imagen anterior">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                    @endif
+
                     <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="product-main-view" id="main-product-img">
+
+                    @if(count($product->gallery_images) > 1)
+                        <button type="button" class="gallery-arrow-btn gallery-next" id="gallery-next-btn" aria-label="Imagen siguiente">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                        
+                        <div class="gallery-autoplay-badge" id="gallery-autoplay-badge" title="Pase de imágenes automático elegante">
+                            <span class="gallery-indicator-dot"></span>
+                            <span id="gallery-counter">1 / {{ count($product->gallery_images) }}</span>
+                        </div>
+                    @endif
                 </div>
+
+                @if(count($product->gallery_images) > 1)
+                    <div style="display:flex; gap:10px; margin-top:14px; overflow-x:auto; padding-bottom:8px;" class="custom-scrollbar" id="gallery-thumbs-container">
+                        @foreach($product->gallery_images as $idx => $gImg)
+                            <div class="thumb-item gallery-thumb-item {{ $idx === 0 ? 'active' : '' }}" 
+                                 data-index="{{ $idx }}"
+                                 data-src="{{ $gImg }}"
+                                 style="width:68px; height:68px; border:2px solid {{ $idx === 0 ? 'var(--primary)' : '#e2e8f0' }}; border-radius:8px; padding:4px; background:#fff; cursor:pointer; flex-shrink:0; transition:all 0.2s ease;">
+                                <img src="{{ $gImg }}" alt="Foto producto {{ $idx+1 }}" style="width:100%; height:100%; object-fit:contain;">
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 @if(!$product->has_custom_image)
                     <div style="margin-top:12px; font-size:12px; color:var(--text-muted); text-align:center;">
@@ -87,41 +117,50 @@
                     </p>
                 @endif
 
-                <!-- Dual Pricing Box (Chilean Hardware Market Standard) -->
+                <!-- Dual Pricing Differentiated Box (Transferencia vs Tarjeta) -->
                 <div class="dual-pricing-detail-card">
-                    <div class="dual-pricing-row">
-                        <!-- Transferencia / Efectivo -->
-                        <div class="price-transfer-block">
-                            <div style="display:flex; align-items:center; margin-bottom:4px;">
-                                <span class="price-badge-discount">{{ $product->transfer_discount_percentage }}% OFF</span>
-                                <span class="price-label-primary">Transferencia / Efectivo</span>
+                    <div class="dual-pricing-grid-compare">
+                        
+                        <!-- 1. Transferencia / Efectivo (Highlight Card) -->
+                        <div class="price-transfer-card">
+                            <div class="price-card-header">
+                                <span class="price-badge-discount">🔥 {{ $product->transfer_discount_percentage }}% DCTO</span>
+                                <span class="price-label-primary">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><rect x="9" y="9" width="13" height="12" rx="2"></rect><circle cx="15.5" cy="15" r="2"></circle></svg>
+                                    Transferencia / Efectivo
+                                </span>
                             </div>
                             <div class="pricing-current-transfer">{{ $product->formatted_transfer_price }}</div>
                             <div class="price-savings-note">
-                                Ahorras <strong>{{ $product->formatted_transfer_savings }}</strong> con transferencia
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Ahorras <strong>{{ $product->formatted_transfer_savings }}</strong> pagando directo</span>
                             </div>
                         </div>
 
-                        <div class="price-divider"></div>
-
-                        <!-- Tarjeta / Normal -->
-                        <div class="price-normal-block">
-                            <span class="price-label-secondary">Tarjeta / Webpay / Otros</span>
+                        <!-- 2. Tarjeta / Webpay / Mercado Pago Card -->
+                        <div class="price-normal-card">
+                            <div class="price-card-header">
+                                <span class="price-label-secondary">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                    Tarjeta / Webpay / Otros
+                                </span>
+                            </div>
                             <div class="pricing-normal">{{ $product->formatted_normal_price }}</div>
                             <div class="price-card-note">
-                                Hasta 12 cuotas en Mercado Pago
+                                Hasta 12 cuotas con Mercado Pago
                             </div>
                         </div>
+
                     </div>
 
-                    <div style="font-size:12.5px; color:#64748b; padding-top:12px; border-top:1px dashed #e2e8f0; display:flex; align-items:center; gap:8px;">
+                    <div class="dual-pricing-footer-note">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         <span>Precios incluyen IVA (19%) | Factura Electrónica disponible para empresas con RUT y Giro</span>
                     </div>
                 </div>
 
                 <!-- Add to cart Form -->
-                <form action="{{ route('cart.add') }}" method="POST" style="margin-bottom: 30px;">
+                <form action="{{ route('cart.add') }}" method="POST" class="ajax-add-to-cart-form" style="margin-bottom: 30px;">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
 
@@ -143,8 +182,25 @@
                     </div>
                 </form>
 
+                <!-- Product WhatsApp Inquiry Button -->
+                @php
+                    $waProductText = urlencode("Hola INEXUS, tengo una consulta sobre el producto:\n*{$product->name}*\nSKU: {$product->sku}\nEnlace: " . url()->current());
+                @endphp
+                <div style="margin-bottom: 22px;">
+                    <a href="https://wa.me/56987654321?text={{ $waProductText }}" 
+                       target="_blank" 
+                       rel="noopener" 
+                       class="btn btn-whatsapp-product btn-block"
+                       title="Consultar dudas sobre este producto en WhatsApp">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.01.815 3.094.815 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.766-5.768-5.766zm9.969 5.766c0 5.518-4.482 10-10 10-1.748 0-3.385-.45-4.815-1.238l-7.185 1.886 1.92-7.009c-.846-1.47-1.32-3.179-1.32-4.999 0-5.518 4.482-10 10-10 5.518 0 10 4.482 10 10z"/>
+                        </svg>
+                        <span>Consultar dudas sobre este producto por WhatsApp</span>
+                    </a>
+                </div>
+
                 <!-- Value Highlights -->
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px;">
+                <div class="product-value-highlights">
                     <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--navy-800);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
                             <rect x="1" y="3" width="15" height="13"></rect>
@@ -174,7 +230,7 @@
 
             <!-- Tab 1: Specifications Table -->
             <div class="tab-pane" id="tab-specs" style="display:block;">
-                <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden;">
+                <div class="specs-table-container" style="background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow-x:auto;">
                     @if(!empty($product->specifications) && count($product->specifications) > 0)
                         <table style="width:100%; border-collapse:collapse; font-size:14px;">
                             <tbody>
@@ -282,9 +338,16 @@
                                 <h4 class="product-title" style="height:auto;">
                                     <a href="{{ route('product.show', $rel->slug) }}">{{ $rel->name }}</a>
                                 </h4>
-                                <div class="product-price-box">
-                                    <div class="price-val">{{ $rel->formatted_price }}</div>
-                                    <a href="{{ route('product.show', $rel->slug) }}" class="btn-quick-add">→</a>
+                                <div class="product-price-box" style="margin-top:auto;">
+                                    <div class="dual-pricing-card">
+                                        <span class="price-badge-pill">Transferencia {{ $rel->transfer_discount_percentage }}% OFF</span>
+                                        <div class="price-transfer-val">{{ $rel->formatted_transfer_price }}</div>
+                                        <div class="price-normal-wrap">
+                                            <span>Tarjeta:</span>
+                                            <span class="price-normal-val">{{ $rel->formatted_normal_price }}</span>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('product.show', $rel->slug) }}" class="btn-quick-add" title="Ver producto">→</a>
                                 </div>
                             </div>
                         </div>

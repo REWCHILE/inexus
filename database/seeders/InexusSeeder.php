@@ -15,14 +15,29 @@ class InexusSeeder extends Seeder
     public function run(): void
     {
         // 1. Create Default Admin User
-        User::firstOrCreate(
-            ['email' => 'admin@inexus.cl'],
-            [
-                'name' => 'Administrador INEXUS',
-                'password' => Hash::make('inexus2026!'),
-                'email_verified_at' => now(),
-            ]
-        );
+        $admin = User::firstOrNew(['email' => 'admin@inexus.cl']);
+        $admin->name = 'Administrador INEXUS';
+        $admin->password = Hash::make('inexus2026!');
+        $admin->is_admin = true;
+        $admin->email_verified_at = now();
+        $admin->save();
+
+        // 1.1 Create Demo Customer User
+        $customer = User::firstOrNew(['email' => 'cliente@inexus.cl']);
+        $customer->name = 'Carlos Valenzuela';
+        $customer->password = Hash::make('cliente2026!');
+        $customer->phone = '+56 9 8765 4321';
+        $customer->rut = '16.892.451-8';
+        $customer->account_type = 'company';
+        $customer->company_name = 'Tecnología y Redes SpA';
+        $customer->company_rut = '76.892.451-K';
+        $customer->company_giro = 'Servicios Informáticos y Redes';
+        $customer->shipping_address = 'Av. Apoquindo 4700, Piso 8';
+        $customer->shipping_city = 'Las Condes, Santiago';
+        $customer->shipping_region = 'Metropolitana';
+        $customer->is_admin = false;
+        $customer->email_verified_at = now();
+        $customer->save();
 
         // 2. Default Store Settings
         $defaultSettings = [
@@ -52,7 +67,7 @@ class InexusSeeder extends Seeder
             [
                 'name' => 'Computadores de Escritorio',
                 'slug' => 'computadores-de-escritorio',
-                'icon' => 'images/categories/1.png',
+                'icon' => 'images/categories/escritorio.svg',
                 'description' => 'Workstations, PCs para empresas y computadores de alta potencia para oficina y renderizado.',
                 'margin_percentage' => 16.0,
                 'sort_order' => 1,
@@ -96,6 +111,62 @@ class InexusSeeder extends Seeder
                 'description' => 'Monitores IPS, pantallas 4K para diseño, monitores curvos y soluciones profesionales.',
                 'margin_percentage' => 17.0,
                 'sort_order' => 6,
+            ],
+            [
+                'name' => 'Computadores Servidores Y Notebooks',
+                'slug' => 'computadores-servidores-y-notebooks',
+                'icon' => 'images/categories/servidores.svg',
+                'description' => 'Servidores en rack, blades y soluciones de infraestructura empresarial.',
+                'margin_percentage' => 15.0,
+                'sort_order' => 7,
+            ],
+            [
+                'name' => 'Componentes De Sistema',
+                'slug' => 'componentes-de-sistema',
+                'icon' => 'images/categories/componentes.svg',
+                'description' => 'Procesadores, placas madre, memorias y partes críticas para ensamblaje.',
+                'margin_percentage' => 18.0,
+                'sort_order' => 8,
+            ],
+            [
+                'name' => 'Dispositivos De Entrada/Salida',
+                'slug' => 'dispositivos-de-entradasalida',
+                'icon' => 'images/categories/entradasalida.svg',
+                'description' => 'Docks, hubs, interfaces y adaptadores multifunción para puestos de trabajo.',
+                'margin_percentage' => 20.0,
+                'sort_order' => 9,
+            ],
+            [
+                'name' => 'Dispositivos De Red',
+                'slug' => 'dispositivos-de-red',
+                'icon' => 'images/categories/redes.svg',
+                'description' => 'Routers empresariales, switches gestionados, puntos de acceso y conectividad.',
+                'margin_percentage' => 18.0,
+                'sort_order' => 10,
+            ],
+            [
+                'name' => 'Software',
+                'slug' => 'software',
+                'icon' => 'images/categories/software.svg',
+                'description' => 'Sistemas operativos Microsoft, licencias corporativas, suites y seguridad.',
+                'margin_percentage' => 12.0,
+                'sort_order' => 11,
+            ],
+            [
+                'name' => 'Cables',
+                'slug' => 'cables',
+                'icon' => 'images/categories/cables.svg',
+                'description' => 'Cables de red estructurado, fibra, HDMI de alta velocidad y alimentación.',
+                'margin_percentage' => 25.0,
+                'sort_order' => 12,
+            ],
+            [
+                'name' => 'Suministros Y Medios',
+                'slug' => 'suministros-y-medios',
+                'icon' => 'images/categories/suministros.svg',
+                'description' => 'Tóneres originales, tintas de alto rendimiento y medios de almacenamiento.',
+                'margin_percentage' => 20.0,
+                'sort_order' => 13,
             ],
         ];
 

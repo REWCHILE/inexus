@@ -13,15 +13,16 @@
         </div>
     </div>
 
-    <div class="container" style="padding: 40px 20px;">
+    <div class="container cart-container">
         <h1 style="font-size:28px; margin-bottom:24px;">Carrito de Compras</h1>
 
         @if(!empty($cart) && count($cart) > 0)
-            <div style="display:grid; grid-template-columns: 1.4fr 0.6fr; gap:32px; align-items:start;">
+            <div class="cart-layout-grid">
                 
                 <!-- Cart Items Table Card -->
                 <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden;">
-                    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                    <div class="cart-table-responsive">
+                    <table style="width:100%; min-width: 600px; border-collapse:collapse; font-size:14px;">
                         <thead>
                             <tr style="background:#f8fafc; border-bottom:1px solid var(--border-color);">
                                 <th style="padding:14px 20px; text-align:left; color:var(--navy-800);">Producto</th>
@@ -87,6 +88,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
 
                     <div style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border-top:1px solid var(--border-color);">
                         <a href="{{ route('shop.index') }}" class="btn btn-secondary" style="font-size:13px;">

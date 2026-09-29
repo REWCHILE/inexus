@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+    <defs>
+        <linearGradient id="grad-net" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+        </linearGradient>
+    </defs>
+    <!-- Antennas -->
+    <line x1="30" y1="20" x2="30" y2="58" stroke="url(#grad-net)" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="60" y1="16" x2="60" y2="58" stroke="url(#grad-net)" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="90" y1="20" x2="90" y2="58" stroke="url(#grad-net)" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Router Chassis -->
+    <rect x="18" y="58" width="84" height="26" rx="6" stroke="url(#grad-net)" stroke-width="3.5" fill="#f0f9ff"/>
+    <!-- Wi-Fi Waves -->
+    <path d="M50 32 C56 28 64 28 70 32" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M44 24 C54 18 66 18 76 24" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- LED Indicators -->
+    <circle cx="30" cy="71" r="2.5" fill="#0284c7"/>
+    <circle cx="42" cy="71" r="2.5" fill="#0284c7"/>
+    <circle cx="54" cy="71" r="2.5" fill="#38bdf8"/>
+    <circle cx="66" cy="71" r="2.5" fill="#0284c7"/>
+    <circle cx="78" cy="71" r="2.5" fill="#38bdf8"/>
+    <circle cx="90" cy="71" r="2.5" fill="#0284c7"/>
+    <!-- Router Feet -->
+    <rect x="28" y="84" width="10" height="4" rx="2" fill="#0284c7"/>
+    <rect x="82" y="84" width="10" height="4" rx="2" fill="#0284c7"/>
+</svg>

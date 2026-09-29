@@ -246,6 +246,33 @@ class IngramMicroService
         $success = 0;
         $failed = 0;
 
+        // Batch query Price & Availability if not already present
+        $skusToQuery = [];
+        foreach ($items as $it) {
+            if (empty($it['pricing']['customerPrice']) && empty($it['pricing']['netPrice']) && !empty($it['ingramPartNumber'])) {
+                $skusToQuery[] = $it['ingramPartNumber'];
+            }
+        }
+        if (!empty($skusToQuery)) {
+            $pnaRes = $this->getPriceAndAvailability($skusToQuery);
+            if ($pnaRes['success'] && !empty($pnaRes['data'])) {
+                $pnaMap = [];
+                foreach ($pnaRes['data'] as $p) {
+                    if (!empty($p['ingramPartNumber'])) {
+                        $pnaMap[$p['ingramPartNumber']] = $p;
+                    }
+                }
+                foreach ($items as &$it) {
+                    $ipn = $it['ingramPartNumber'] ?? null;
+                    if ($ipn && isset($pnaMap[$ipn])) {
+                        $it['pricing'] = $pnaMap[$ipn]['pricing'] ?? [];
+                        $it['availability'] = $pnaMap[$ipn]['availability'] ?? [];
+                    }
+                }
+                unset($it);
+            }
+        }
+
         foreach ($items as $item) {
             $processed++;
             try {
@@ -259,10 +286,10 @@ class IngramMicroService
                 $brand = $item['vendorName'] ?? null;
                 $costUsd = 0.0;
 
-                if (!empty($item['pricing']['netPrice'])) {
-                    $costUsd = (float) $item['pricing']['netPrice'];
-                } elseif (!empty($item['pricing']['customerPrice'])) {
+                if (!empty($item['pricing']['customerPrice'])) {
                     $costUsd = (float) $item['pricing']['customerPrice'];
+                } elseif (!empty($item['pricing']['netPrice'])) {
+                    $costUsd = (float) $item['pricing']['netPrice'];
                 } elseif (!empty($item['pricing']['retailPrice'])) {
                     $costUsd = (float) $item['pricing']['retailPrice'];
                 }
@@ -271,7 +298,7 @@ class IngramMicroService
                 $categoryName = $item['category'] ?? $item['subCategory'] ?? 'Tecnología General';
                 $category = Category::firstOrCreate(
                     ['slug' => Str::slug($categoryName)],
-                    ['name' => $categoryName, 'icon' => 'images/categories/1.png', 'is_active' => true]
+                    ['name' => $categoryName, 'icon' => 'images/categories/servidores.svg', 'is_active' => true]
                 );
 
                 $existingProduct = Product::where('sku', $sku)->first();
@@ -288,18 +315,23 @@ class IngramMicroService
                     $stock = (int) $item['availability']['quantityAvailable'];
                 }
 
+                $shortDesc = $item['extraDescription'] ?? $name;
+
                 $productData = [
                     'category_id' => $category->id,
                     'ingram_part_number' => $item['ingramPartNumber'] ?? $sku,
                     'vendor_part_number' => $item['vendorPartNumber'] ?? null,
                     'name' => $existingProduct && $preserveScraped && !empty($existingProduct->name) ? $existingProduct->name : $name,
+                    'short_description' => $existingProduct && !empty($existingProduct->short_description) ? $existingProduct->short_description : $shortDesc,
+                    'slug' => $existingProduct && !empty($existingProduct->slug) ? $existingProduct->slug : Str::slug(mb_substr($name, 0, 80) . '-' . $sku),
                     'brand' => $brand,
                     'cost_price_usd' => $costUsd,
                     'cost_price_clp' => $pricing['cost_clp'],
                     'calculated_price_clp' => $pricing['retail_clp'],
-                    'regular_price' => $existingProduct && $existingProduct->regular_price > 0 ? $existingProduct->regular_price : $pricing['retail_clp'],
+                    'regular_price' => $pricing['retail_clp'],
                     'stock' => $stock,
                     'stock_status' => $stock > 0 ? 'in_stock' : 'out_of_stock',
+                    'main_image' => $existingProduct && !empty($existingProduct->main_image) ? $existingProduct->main_image : 'images/placeholder-product.svg',
                     'is_active' => true,
                 ];
 

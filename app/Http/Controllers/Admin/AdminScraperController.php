@@ -6,16 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\SyncLog;
+use App\Services\CatalogCrossEnricherService;
 use App\Services\ScraperService;
 use Illuminate\Http\Request;
 
 class AdminScraperController extends Controller
 {
     protected ScraperService $scraper;
+    protected CatalogCrossEnricherService $enricher;
 
-    public function __construct(ScraperService $scraper)
+    public function __construct(ScraperService $scraper, CatalogCrossEnricherService $enricher)
     {
         $this->scraper = $scraper;
+        $this->enricher = $enricher;
     }
 
     public function index()
@@ -92,6 +95,19 @@ class AdminScraperController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Scraping por lotes completado. Procesados: {$result['processed']}, Encontrados: {$result['found']}, Sin resultados: {$result['not_found']}.",
+            'details' => $result,
+        ]);
+    }
+
+    public function crossMatch(Request $request)
+    {
+        $limit = max(1, min(50, (int) $request->get('limit', 15)));
+        $force = $request->boolean('force', false);
+        $result = $this->enricher->enrichBatch($limit, $force);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Cruce y enriquecimiento completado. Procesados: {$result['processed']}, Enriquecidos: {$result['found']}, Sin resultados: {$result['not_found']}.",
             'details' => $result,
         ]);
     }

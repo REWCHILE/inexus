@@ -3,70 +3,124 @@
 @section('title', 'INEXUS | Equipamiento Destacado y Soluciones Tecnológicas en Chile')
 
 @section('content')
+    <!-- Dynamic Multi-Slide Hero Carousel (With Product Mini-Sliders) -->
+    <section class="hero-section" id="hero-carousel-section">
+        <div class="hero-slider" id="hero-slider">
+            <div class="hero-slides-wrapper" id="hero-slides-wrapper">
+                @foreach($heroSlides as $slideIndex => $slide)
+                    <div class="hero-slide {{ $slideIndex === 0 ? 'active' : '' }}" data-slide-index="{{ $slideIndex }}">
+                        <div class="container hero-grid">
+                            <!-- Left Content Column -->
+                            <div class="hero-content-col">
+                                <span class="hero-tagline">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                    </svg>
+                                    {{ $slide['tagline'] }}
+                                </span>
+                                <h1 class="hero-title">{!! $slide['title'] !!}</h1>
+                                <p class="hero-description">{{ $slide['description'] }}</p>
+                                <div class="hero-ctas">
+                                    <a href="{{ $slide['primary_btn_url'] }}" class="btn btn-primary btn-lg">
+                                        <span>{{ $slide['primary_btn_text'] }}</span>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            <polyline points="12 5 19 12 12 19"></polyline>
+                                        </svg>
+                                    </a>
+                                    <a href="{{ $slide['secondary_btn_url'] }}" class="btn btn-secondary btn-lg">
+                                        <span>{{ $slide['secondary_btn_text'] }}</span>
+                                    </a>
+                                </div>
+                            </div>
 
-    <!-- Top Categories Showcase (Exactly matching screenshot styling) -->
-    <section class="categories-showcase">
-        <div class="container">
-            <div class="category-cards-grid">
-                @foreach($categories as $cat)
-                    <a href="{{ route('shop.index', ['categoria' => $cat->slug]) }}" class="category-card">
-                        <div class="category-icon-wrapper">
-                            <img src="{{ $cat->icon_url }}" alt="{{ $cat->name }}">
+                            <!-- Right Content: Slide Product Showcase Card with internal Product Carousel -->
+                            <div class="hero-media-box">
+                                <div class="hero-card-featured hero-product-carousel" data-slide-id="{{ $slideIndex }}">
+                                    @foreach($slide['products'] as $pIdx => $prod)
+                                        <div class="hero-prod-item {{ $pIdx === 0 ? 'active' : '' }}" data-prod-index="{{ $pIdx }}">
+                                            <div class="hero-card-top-row">
+                                                <span class="hero-card-badge">{{ $prod->brand ? $prod->brand . ' Oficial' : 'Oferta Destacada' }}</span>
+                                                @if(count($slide['products']) > 1)
+                                                    <div class="hero-card-counter">
+                                                        <span>{{ $pIdx + 1 }}/{{ count($slide['products']) }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <div class="hero-prod-img-wrap">
+                                                <img src="{{ $prod->image_url }}" alt="{{ $prod->name }}" loading="eager">
+                                            </div>
+
+                                            <div class="hero-prod-category">{{ $prod->category?->name ?? 'Hardware' }}</div>
+                                            <h3 class="hero-prod-title" title="{{ $prod->name }}">
+                                                <a href="{{ route('product.show', $prod->slug) }}">{{ $prod->name }}</a>
+                                            </h3>
+
+                                            <p class="hero-prod-specs">
+                                                @if(!empty($prod->short_description))
+                                                    {{ Str::limit($prod->short_description, 80) }}
+                                                @elseif(!empty($prod->specifications) && is_array($prod->specifications))
+                                                    {{ implode(' • ', array_slice(array_values($prod->specifications), 0, 3)) }}
+                                                @else
+                                                    Garantía Oficial • Despacho Express a Todo Chile
+                                                @endif
+                                            </p>
+
+                                            <div class="hero-prod-bottom">
+                                                <div>
+                                                    <span class="hero-price-label">Precio Contado / Transferencia</span>
+                                                    <span class="hero-price-val">{{ $prod->formatted_transfer_price }}</span>
+                                                </div>
+                                                <!-- Directly linking to this product's detail page -->
+                                                <a href="{{ route('product.show', $prod->slug) }}" class="btn btn-primary hero-btn-offer">
+                                                    Ver Oferta
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                    <!-- Navigation arrows inside the product card -->
+                                    @if(count($slide['products']) > 1)
+                                        <div class="hero-prod-nav-bar">
+                                            <button type="button" class="hero-prod-arrow hero-prod-prev" aria-label="Producto anterior">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                            </button>
+                                            <div class="hero-prod-dots">
+                                                @foreach($slide['products'] as $pIdx => $prod)
+                                                    <button type="button" class="hero-prod-dot {{ $pIdx === 0 ? 'active' : '' }}" data-goto="{{ $pIdx }}"></button>
+                                                @endforeach
+                                            </div>
+                                            <button type="button" class="hero-prod-arrow hero-prod-next" aria-label="Siguiente producto">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                            </button>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
-                        <h3 class="category-title">{{ $cat->name }}</h3>
-                        <span class="category-count">{{ $cat->products_count }} productos</span>
-                    </a>
+                    </div>
                 @endforeach
             </div>
-        </div>
-    </section>
 
-    <!-- Hero Sales Funnel Section -->
-    <section class="hero-section">
-        <div class="container hero-grid">
-            <div>
-                <span class="hero-tagline">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    Mayorista & Retail IT Chile
-                </span>
-                <h1 class="hero-title">
-                    Hardware de alta gama y <span>soluciones tecnológicas</span> integrales.
-                </h1>
-                <p class="hero-description">
-                    Abastecemos a empresas, instituciones y profesionales con el mejor equipamiento informático, servidores, notebooks de resistencia corporativa y componentes de última generación.
-                </p>
-                <div class="hero-ctas">
-                    <a href="{{ route('shop.index') }}" class="btn btn-primary btn-lg">
-                        <span>Explorar Catálogo</span>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </a>
-                    <a href="{{ route('page.contact') }}" class="btn btn-secondary btn-lg">
-                        <span>Cotización para Empresas</span>
-                    </a>
-                </div>
-            </div>
+            <!-- Main Hero Carousel Prev / Next Arrow Controls -->
+            <button type="button" class="hero-main-arrow hero-main-prev" id="hero-main-prev" aria-label="Slide anterior">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button type="button" class="hero-main-arrow hero-main-next" id="hero-main-next" aria-label="Siguiente slide">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
 
-            <div class="hero-media-box">
-                <div class="hero-card-featured">
-                    <span class="hero-card-badge">Oferta Destacada</span>
-                    <div style="height: 240px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
-                        <img src="https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&auto=format&fit=crop&q=80" alt="Lenovo ThinkPad E14" style="max-height: 220px; object-fit: contain;">
-                    </div>
-                    <div style="font-size:12px; color:var(--primary); font-weight:700; text-transform:uppercase;">Notebook Corporativo</div>
-                    <h3 style="font-size:17px; margin:4px 0 8px;">Lenovo ThinkPad E14 Gen 5 Core i7</h3>
-                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">16GB RAM | 512GB SSD NVMe | Windows 11 Pro | Garantía 3 Años</p>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="font-size:11.5px; color:#64748b; display:block;">Precio Contado / Transferencia</span>
-                            <span style="font-size:22px; font-weight:800; color:var(--navy-900); font-family:'Plus Jakarta Sans';">$ 949.990 CLP</span>
-                        </div>
-                        <a href="{{ route('shop.index') }}" class="btn btn-primary" style="padding:8px 16px;">Ver Oferta</a>
-                    </div>
+            <!-- Bottom Slide Indicators / Tabs -->
+            <div class="container">
+                <div class="hero-pagination-bar" id="hero-pagination-bar">
+                    @foreach($heroSlides as $slideIndex => $slide)
+                        <button type="button" class="hero-pagination-pill {{ $slideIndex === 0 ? 'active' : '' }}" data-slide="{{ $slideIndex }}">
+                            <span class="pill-number">0{{ $slideIndex + 1 }}</span>
+                            <span class="pill-title">{{ $slide['badge'] }}</span>
+                            <span class="pill-progress"><span class="pill-progress-bar"></span></span>
+                        </button>
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -79,7 +133,7 @@
                 <div class="pillar-icon-box">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="1" y="3" width="15" height="13"></rect>
-                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
                         <circle cx="5.5" cy="18.5" r="2.5"></circle>
                         <circle cx="18.5" cy="18.5" r="2.5"></circle>
                     </svg>
@@ -127,6 +181,46 @@
                 <div>
                     <h4 class="pillar-title">Asesoría Especializada</h4>
                     <p class="pillar-desc">Atención técnica personalizada por WhatsApp y teléfono para armar tu proyecto IT.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Showcase (Elegant Slow Horizontal Infinite Scroll) -->
+    <section class="categories-showcase" id="categories-section">
+        <div class="container">
+            <div class="categories-header-row">
+                <div>
+                    <span class="section-subtitle">Familias de Hardware & Equipamiento</span>
+                    <h2 class="section-title" style="margin-bottom: 0;">Explora por Categoría</h2>
+                </div>
+                <div class="categories-nav-controls">
+                    <button type="button" class="cat-nav-btn" id="cat-prev-btn" aria-label="Desplazar hacia la izquierda" title="Ver categorías anteriores">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button type="button" class="cat-nav-btn" id="cat-next-btn" aria-label="Desplazar hacia la derecha" title="Ver categorías siguientes">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                    <a href="{{ route('shop.index') }}" class="btn-view-all-cats">
+                        <span>Ver catálogo completo ({{ $categories->count() }})</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="categories-carousel-outer">
+            <div class="categories-scroll-container" id="categories-scroll-container">
+                <div class="categories-cards-track" id="categories-cards-track">
+                    @foreach($categories->concat($categories)->concat($categories) as $cat)
+                        <a href="{{ route('shop.index', ['categoria' => $cat->slug]) }}" class="category-card" title="{{ $cat->name }}">
+                            <div class="category-icon-wrapper">
+                                <img src="{{ $cat->icon_url }}" alt="{{ $cat->name }}" loading="lazy">
+                            </div>
+                            <h3 class="category-title">{{ $cat->name }}</h3>
+                            <span class="category-count">{{ $cat->products_count }} productos</span>
+                        </a>
+                    @endforeach
                 </div>
             </div>
         </div>

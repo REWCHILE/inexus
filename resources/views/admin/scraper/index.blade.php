@@ -79,29 +79,36 @@
             <div id="live-scrape-result" style="display:none; margin-top:16px; border:1px solid var(--border-color); border-radius:8px; padding:18px; background:#f8fafc;"></div>
         </div>
 
-        <!-- Batch Scraper Runner -->
+        <!-- Batch Scraper & Ingram Cross-Enricher Runner -->
         <div class="checkout-card" style="margin:0;">
-            <h3 style="font-size:17px; margin-bottom:6px;">Scraping Masivo por Lotes</h3>
-            <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
-                Procesa automáticamente los productos que carecen de fotos en el catálogo.
+            <h3 style="font-size:17px; margin-bottom:6px;">Cruce Masivo: Ingram Micro + Scraper</h3>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+                Cruza automáticamente los productos de Ingram con fichas técnicas completas, galerías de fotos y precios de mercado (Winpy / SoloTodo).
             </p>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
                 <label for="batch-limit" style="font-size:13px; font-weight:600;">Lote:</label>
                 <select id="batch-limit" class="form-control" style="max-width:130px;">
                     <option value="5">5 productos</option>
-                    <option value="10" selected>10 productos</option>
-                    <option value="25">25 productos</option>
+                    <option value="15" selected>15 productos</option>
+                    <option value="30">30 productos</option>
                 </select>
-                <button type="button" id="btn-run-batch-scrape" class="btn btn-primary" style="flex:1;">
-                    Iniciar Lote Automático
+                <button type="button" id="btn-run-cross-match" class="btn btn-primary" style="flex:1;">
+                    Iniciar Cruce Automático
                 </button>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--navy-900); cursor:pointer;">
+                    <input type="checkbox" id="batch-force" style="accent-color:var(--primary); width:16px; height:16px;">
+                    <span>Forzar re-enriquecimiento de productos ya procesados</span>
+                </label>
             </div>
 
             <div id="batch-scrape-status" style="display:none; padding:14px; border-radius:6px; font-size:13.5px;"></div>
 
-            <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border-color); font-size:12px; color:var(--text-muted); line-height:1.5;">
-                ℹ Si el rastreador no encuentra fotos coherentes, asigna la imagen oficial de catálogo con marca de agua INEXUS Chile para asegurar la estética de la tienda.
+            <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-color); font-size:12px; color:var(--text-muted); line-height:1.5;">
+                ℹ El motor cruza automáticamente el <code>vendor_part_number</code> y SKU del mayorista para extraer galerías de imágenes de alta resolución, fichas completas y calcular precios duales.
             </div>
         </div>
 
@@ -262,46 +269,53 @@
         }
     });
 
-    // 2. Batch Scraper
-    document.getElementById('btn-run-batch-scrape').addEventListener('click', async () => {
-        const btn = document.getElementById('btn-run-batch-scrape');
+    // 2. Batch Cross-Enricher
+    document.getElementById('btn-run-cross-match').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-run-cross-match');
         const box = document.getElementById('batch-scrape-status');
         const limit = document.getElementById('batch-limit').value;
+        const force = document.getElementById('batch-force').checked;
 
         btn.disabled = true;
-        btn.innerHTML = 'Procesando Lote...';
+        btn.innerHTML = 'Cruzando Catálogo...';
         box.style.display = 'block';
         box.style.background = '#f0f9ff';
         box.style.color = '#0369a1';
-        box.innerHTML = `Ejecutando scraping sobre lote de ${limit} productos... Por favor espera.`;
+        box.innerHTML = `Ejecutando cruce automático sobre ${limit} productos de Ingram Micro (Búsqueda en Winpy / SoloTodo / Catálogo)... Por favor espera.`;
+
+        if (typeof window.showPageLoader === 'function') {
+            window.showPageLoader('Cruzando catálogo con Winpy y fuentes web...');
+        }
 
         try {
-            const res = await fetch("{{ route('admin.scraper.batch') }}", {
+            const res = await fetch("{{ route('admin.scraper.cross-match') }}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-                body: JSON.stringify({ limit })
+                body: JSON.stringify({ limit, force })
             });
             const data = await res.json();
             if (data.success) {
                 box.style.background = '#f0fdf4';
                 box.style.color = '#15803d';
                 box.innerHTML = `✓ ${data.message}`;
-                setTimeout(() => location.reload(), 2500);
+                setTimeout(() => location.reload(), 2000);
             } else {
                 box.style.background = '#fef2f2';
                 box.style.color = '#b91c1c';
-                box.innerHTML = `✕ Error en el lote.`;
+                box.innerHTML = `✕ Error en el cruce de catálogo.`;
+                if (typeof window.hidePageLoader === 'function') window.hidePageLoader();
             }
         } catch (e) {
             box.style.background = '#fef2f2';
             box.style.color = '#b91c1c';
             box.innerHTML = `Error: ${e.message}`;
+            if (typeof window.hidePageLoader === 'function') window.hidePageLoader();
         } finally {
             btn.disabled = false;
-            btn.innerHTML = 'Iniciar Lote Automático';
+            btn.innerHTML = 'Iniciar Cruce con Scraper';
         }
     });
 </script>

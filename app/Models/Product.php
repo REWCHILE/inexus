@@ -169,6 +169,23 @@ class Product extends Model
         return asset('images/placeholder-product.svg');
     }
 
+    public function getGalleryImagesAttribute(): array
+    {
+        $images = [];
+        if (!empty($this->main_image)) {
+            $images[] = $this->image_url;
+        }
+        if (!empty($this->gallery) && is_array($this->gallery)) {
+            foreach ($this->gallery as $img) {
+                $formatted = Str::startsWith($img, ['http://', 'https://']) ? $img : asset($img);
+                if (!empty($formatted) && !in_array($formatted, $images)) {
+                    $images[] = $formatted;
+                }
+            }
+        }
+        return !empty($images) ? $images : [asset('images/placeholder-product.svg')];
+    }
+
     public function getHasCustomImageAttribute(): bool
     {
         return !empty($this->main_image) && $this->scraper_status !== 'not_found';

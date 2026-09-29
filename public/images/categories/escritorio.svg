@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+    <defs>
+        <linearGradient id="grad-desktop" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+        </linearGradient>
+        <linearGradient id="glow-desktop" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#e0f2fe" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#bae6fd" stop-opacity="0.1"/>
+        </linearGradient>
+    </defs>
+    <!-- Monitor Frame -->
+    <rect x="18" y="16" width="62" height="42" rx="4" stroke="url(#grad-desktop)" stroke-width="3.5" fill="url(#glow-desktop)"/>
+    <!-- Screen Inner Display -->
+    <rect x="23" y="21" width="52" height="32" rx="2" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+    <path d="M30 37 L40 29 L52 40 L60 33 L68 41" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Monitor Stand -->
+    <path d="M49 58 L49 69 M38 69 L60 69" stroke="url(#grad-desktop)" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Desktop Tower -->
+    <rect x="85" y="24" width="22" height="52" rx="3" stroke="url(#grad-desktop)" stroke-width="3.5" fill="#f0f9ff"/>
+    <!-- Power Button & Drive Slots -->
+    <circle cx="96" cy="33" r="2.5" fill="#0284c7"/>
+    <line x1="90" y1="41" x2="102" y2="41" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="90" y1="47" x2="102" y2="47" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Tower Airflow Grille -->
+    <line x1="91" y1="60" x2="101" y2="60" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="91" y1="65" x2="101" y2="65" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="91" y1="70" x2="101" y2="70" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <!-- Keyboard & Mouse Base -->
+    <rect x="22" y="78" width="54" height="6" rx="2" stroke="url(#grad-desktop)" stroke-width="2.5" fill="#e0f2fe"/>
+    <ellipse cx="86" cy="81" rx="4.5" ry="3.5" stroke="url(#grad-desktop)" stroke-width="2" fill="#bae6fd"/>
+</svg>

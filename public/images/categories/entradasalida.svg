@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+    <defs>
+        <linearGradient id="grad-io" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+        </linearGradient>
+    </defs>
+    <!-- Docking Station Body -->
+    <rect x="22" y="32" width="76" height="48" rx="8" stroke="url(#grad-io)" stroke-width="3.5" fill="#f0f9ff"/>
+    <!-- Ports -->
+    <!-- HDMI Port -->
+    <path d="M32 46 L44 46 L42 56 L34 56 Z" stroke="#0284c7" stroke-width="2" fill="#bae6fd"/>
+    <!-- USB-A Port -->
+    <rect x="50" y="46" width="16" height="10" rx="1.5" stroke="#0284c7" stroke-width="2" fill="#bae6fd"/>
+    <line x1="53" y1="51" x2="63" y2="51" stroke="#0284c7" stroke-width="1.5"/>
+    <!-- USB-C Port -->
+    <rect x="72" y="47" width="14" height="8" rx="4" stroke="#0284c7" stroke-width="2" fill="#38bdf8"/>
+    <!-- Indicator LED -->
+    <circle cx="86" cy="38" r="2" fill="#0284c7"/>
+    <!-- Connection Cable & Plug -->
+    <path d="M60 80 C60 92 40 92 40 102" stroke="url(#grad-io)" stroke-width="3" stroke-linecap="round"/>
+    <rect x="34" y="100" width="12" height="6" rx="2" stroke="url(#grad-io)" stroke-width="2" fill="#0284c7"/>
+    <rect x="37" y="106" width="6" height="4" rx="1" fill="#38bdf8"/>
+</svg>

@@ -61,13 +61,8 @@ class CartController extends Controller
 
         $this->saveCart($cart);
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => '¡Producto agregado al carrito!',
-                'cart_count' => array_sum(array_column($cart, 'quantity')),
-                'cart_subtotal' => '$' . number_format(array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cart)), 0, ',', '.') . ' CLP',
-            ]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($this->getDrawerPayload($cart, '¡Producto agregado al carrito con éxito!'));
         }
 
         return redirect()->back()->with('success', 'Producto agregado al carrito con éxito.');
@@ -85,20 +80,8 @@ class CartController extends Controller
             $this->saveCart($cart);
         }
 
-        if ($request->wantsJson()) {
-            $itemSubtotal = ($cart[$productId]['price'] ?? 0) * $quantity;
-            $cartSubtotal = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cart));
-            $shipping = $cartSubtotal > 150000 || empty($cart) ? 0 : 4990;
-            $total = $cartSubtotal + $shipping;
-
-            return response()->json([
-                'success' => true,
-                'item_subtotal' => '$' . number_format($itemSubtotal, 0, ',', '.') . ' CLP',
-                'cart_count' => array_sum(array_column($cart, 'quantity')),
-                'cart_subtotal' => '$' . number_format($cartSubtotal, 0, ',', '.') . ' CLP',
-                'shipping' => '$' . number_format($shipping, 0, ',', '.') . ' CLP',
-                'cart_total' => '$' . number_format($total, 0, ',', '.') . ' CLP',
-            ]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($this->getDrawerPayload($cart, 'Carrito actualizado.'));
         }
 
         return redirect()->route('cart.index')->with('success', 'Carrito actualizado.');
@@ -114,20 +97,39 @@ class CartController extends Controller
             $this->saveCart($cart);
         }
 
-        if ($request->wantsJson()) {
-            $cartSubtotal = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cart));
-            $shipping = $cartSubtotal > 150000 || empty($cart) ? 0 : 4990;
-            $total = $cartSubtotal + $shipping;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Producto eliminado del carrito.',
-                'cart_count' => array_sum(array_column($cart, 'quantity')),
-                'cart_subtotal' => '$' . number_format($cartSubtotal, 0, ',', '.') . ' CLP',
-                'cart_total' => '$' . number_format($total, 0, ',', '.') . ' CLP',
-            ]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($this->getDrawerPayload($cart, 'Producto eliminado del carrito.'));
         }
 
         return redirect()->route('cart.index')->with('success', 'Producto eliminado.');
+    }
+
+    public function drawerHtml(Request $request)
+    {
+        $cart = $this->getCart();
+        return response()->json($this->getDrawerPayload($cart));
+    }
+
+    protected function getDrawerPayload(array $cart, string $message = ''): array
+    {
+        $cartSubtotal = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cart));
+        $shipping = $cartSubtotal > 150000 || empty($cart) ? 0 : 4990;
+        $total = $cartSubtotal + $shipping;
+        $count = array_sum(array_column($cart, 'quantity'));
+        $threshold = 150000;
+        $diff = max(0, $threshold - $cartSubtotal);
+
+        return [
+            'success' => true,
+            'message' => $message,
+            'cart_count' => $count,
+            'cart_subtotal' => '$' . number_format($cartSubtotal, 0, ',', '.') . ' CLP',
+            'shipping' => $shipping === 0 ? 'GRATIS' : '$' . number_format($shipping, 0, ',', '.') . ' CLP',
+            'cart_total' => '$' . number_format($total, 0, ',', '.') . ' CLP',
+            'free_shipping_diff' => '$' . number_format($diff, 0, ',', '.') . ' CLP',
+            'has_free_shipping' => $cartSubtotal >= $threshold,
+            'is_empty' => empty($cart),
+            'html' => view('partials.cart_drawer_items', compact('cart', 'cartSubtotal', 'total', 'shipping'))->render(),
+        ];
     }
 }

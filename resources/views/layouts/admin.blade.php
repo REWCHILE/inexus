@@ -21,6 +21,15 @@
 </head>
 <body style="background:#f1f5f9;">
 
+    <!-- Interactive Dynamic Magnetic Cursor Follower -->
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-circle" id="cursor-circle">
+        <span class="cursor-text" id="cursor-text"></span>
+    </div>
+
+    <!-- Global Branded Preloader / Loader -->
+    @include('partials.page_loader')
+
     <div class="admin-layout">
         
         <!-- Sidebar -->
@@ -145,8 +154,17 @@
         <div class="admin-main">
             <!-- Admin Topbar -->
             <header class="admin-topbar">
-                <div style="font-weight:700; font-size:16px; color:var(--navy-900);">
-                    @yield('header_title', 'Administración INEXUS Chile')
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button type="button" class="admin-menu-toggle" id="admin-menu-toggle" aria-label="Toggle Sidebar">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div style="font-weight:700; font-size:16px; color:var(--navy-900);">
+                        @yield('header_title', 'Administración INEXUS Chile')
+                    </div>
                 </div>
 
                 <div style="display:flex; align-items:center; gap:20px;">
@@ -186,6 +204,8 @@
 
     </div>
 
+    <!-- Scripts -->
+    <script src="{{ asset('js/inexus.js') }}"></script>
     @yield('scripts')
 </body>
 </html>

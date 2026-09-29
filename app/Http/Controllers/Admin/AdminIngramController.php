@@ -7,16 +7,19 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\SyncLog;
+use App\Services\CatalogCrossEnricherService;
 use App\Services\IngramMicroService;
 use Illuminate\Http\Request;
 
 class AdminIngramController extends Controller
 {
     protected IngramMicroService $ingram;
+    protected CatalogCrossEnricherService $enricher;
 
-    public function __construct(IngramMicroService $ingram)
+    public function __construct(IngramMicroService $ingram, CatalogCrossEnricherService $enricher)
     {
         $this->ingram = $ingram;
+        $this->enricher = $enricher;
     }
 
     public function index()
@@ -87,14 +90,20 @@ class AdminIngramController extends Controller
 
     public function sync(Request $request)
     {
-        // Try fetching items from Ingram API
-        $keyword = $request->get('keyword', '');
         $pageSize = (int) $request->get('page_size', 20);
+        $pageNumber = (int) $request->get('page_number', 1);
+        $autoEnrich = $request->boolean('enrich', true);
 
+        if ($autoEnrich) {
+            $result = $this->enricher->syncAndEnrichFromIngram($pageSize, $pageNumber, true);
+            return response()->json($result);
+        }
+
+        $keyword = $request->get('keyword', '');
         $response = $this->ingram->searchCatalog([
             'keyword' => $keyword,
             'pageSize' => $pageSize,
-            'pageNumber' => 1
+            'pageNumber' => $pageNumber
         ]);
 
         if (!$response['success']) {

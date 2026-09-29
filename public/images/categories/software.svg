@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+    <defs>
+        <linearGradient id="grad-soft" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+        </linearGradient>
+    </defs>
+    <!-- Software Box 3D perspective -->
+    <path d="M34 26 L76 16 L92 34 L50 44 Z" stroke="url(#grad-soft)" stroke-width="3" fill="#e0f2fe"/>
+    <path d="M34 26 L50 44 L50 98 L34 80 Z" stroke="url(#grad-soft)" stroke-width="3" fill="#bae6fd"/>
+    <path d="M50 44 L92 34 L92 88 L50 98 Z" stroke="url(#grad-soft)" stroke-width="3.5" fill="#f0f9ff"/>
+
+    <!-- Code Brackets on front box cover -->
+    <path d="M64 58 L57 66 L64 74" stroke="#0284c7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M78 58 L85 66 L78 74" stroke="#0284c7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="73" y1="56" x2="69" y2="76" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- License Verification Check / Hologram -->
+    <circle cx="71" cy="85" r="4.5" fill="#0284c7"/>
+    <path d="M69 85 L71 87 L74 83" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

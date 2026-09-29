@@ -17,11 +17,20 @@
         </div>
     </div>
 
-    <div class="container" style="padding: 40px 20px;">
-        <div style="display:grid; grid-template-columns: 260px 1fr; gap: 32px; align-items: start;">
+    <div class="container shop-container">
+        <!-- Mobile Filter Button Trigger (Visible only on mobile/tablet) -->
+        <button type="button" class="mobile-filter-trigger" id="mobile-filter-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            <span>Filtrar por Categoría, Marca y Precio</span>
+            <span class="filter-caret" id="filter-caret">▾</span>
+        </button>
+
+        <div class="shop-page-layout">
             
             <!-- Filters Sidebar -->
-            <aside style="background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:24px;">
+            <aside class="shop-filter-sidebar" id="shop-filter-sidebar">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
                     <h3 style="font-size:16px; margin:0;">Filtros de Búsqueda</h3>
                     <a href="{{ route('shop.index') }}" style="font-size:12px; color:var(--primary); font-weight:600;">Limpiar</a>
@@ -84,10 +93,10 @@
             </aside>
 
             <!-- Products Listing Main Area -->
-            <div>
+            <div class="shop-products-main">
                 <!-- Top Toolbar -->
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:14px 20px; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
-                    <div>
+                <div class="shop-toolbar">
+                    <div class="shop-toolbar-info">
                         <span style="font-weight:700; color:var(--navy-900);">{{ $products->total() }}</span> productos encontrados
                         @if(request('q'))
                             para "<span style="color:var(--primary); font-weight:600;">{{ request('q') }}</span>"
@@ -98,9 +107,9 @@
                     </div>
 
                     <!-- Sort -->
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <label for="orden" style="font-size:13px; color:var(--text-muted);">Ordenar por:</label>
-                        <select name="orden" id="orden" class="form-control" style="width:180px; height:38px; font-size:13px;" onchange="location = this.value;">
+                    <div class="shop-toolbar-sort">
+                        <label for="orden" style="font-size:13px; color:var(--text-muted); white-space:nowrap;">Ordenar:</label>
+                        <select name="orden" id="orden" class="form-control" style="width:170px; height:38px; font-size:13px;" onchange="location = this.value;">
                             <option value="{{ request()->fullUrlWithQuery(['orden' => 'mas_reciente', 'page' => null]) }}" {{ $sort === 'mas_reciente' ? 'selected' : '' }}>Más recientes</option>
                             <option value="{{ request()->fullUrlWithQuery(['orden' => 'precio_menor', 'page' => null]) }}" {{ $sort === 'precio_menor' ? 'selected' : '' }}>Precio: Menor a Mayor</option>
                             <option value="{{ request()->fullUrlWithQuery(['orden' => 'precio_mayor', 'page' => null]) }}" {{ $sort === 'precio_mayor' ? 'selected' : '' }}>Precio: Mayor a Menor</option>
@@ -111,63 +120,36 @@
 
                 <!-- Products Grid -->
                 @if($products->count() > 0)
-                    <div class="products-grid" style="grid-template-columns: repeat(3, 1fr);">
-                        @foreach($products as $product)
-                            <div class="product-card">
-                                <div class="product-badge-wrap">
-                                    @if($product->stock > 0)
-                                        <span class="badge-stock">Stock: {{ $product->stock }}</span>
-                                    @else
-                                        <span class="badge-out-stock">Agotado</span>
-                                    @endif
-                                    @if($product->brand)
-                                        <span class="badge-brand">{{ $product->brand }}</span>
-                                    @endif
-                                </div>
-
-                                <a href="{{ route('product.show', $product->slug) }}" class="product-img-box">
-                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">
-                                </a>
-
-                                <div class="product-info">
-                                    <div class="product-cat-tag">{{ $product->category?->name ?: 'Hardware' }}</div>
-                                    <h3 class="product-title">
-                                        <a href="{{ route('product.show', $product->slug) }}" title="{{ $product->name }}">
-                                            {{ $product->name }}
-                                        </a>
-                                    </h3>
-                                    <div class="product-sku-code">SKU: {{ $product->sku }}</div>
-
-                                    <div class="product-price-box">
-                                        <div class="dual-pricing-card">
-                                            <span class="price-badge-pill">Transferencia {{ $product->transfer_discount_percentage }}% OFF</span>
-                                            <div class="price-transfer-val">{{ $product->formatted_transfer_price }}</div>
-                                            <div class="price-normal-wrap">
-                                                <span>Tarjeta:</span>
-                                                <span class="price-normal-val">{{ $product->formatted_normal_price }}</span>
-                                            </div>
-                                        </div>
-
-                                        <form action="{{ route('cart.add') }}" method="POST" class="ajax-add-to-cart">
-                                            @csrf
-                                            <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                            <input type="hidden" name="quantity" value="1">
-                                            <button type="submit" class="btn-quick-add" title="Agregar al Carrito">
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+                    <div class="products-grid" id="products-catalog-grid">
+                        @include('partials.product_cards', ['products' => $products])
                     </div>
 
-                    <!-- Pagination -->
-                    <div style="margin-top: 40px; display:flex; justify-content:center;">
-                        {{ $products->links() }}
+                    <!-- Modern Infinite Scrolling Sentinel & Loader -->
+                    <div id="infinite-scroll-container" style="margin-top: 40px; text-align: center;" 
+                         data-next-page="{{ $products->nextPageUrl() }}" 
+                         data-has-more="{{ $products->hasMorePages() ? '1' : '0' }}">
+                        
+                        <!-- Dynamic Loading Spinner -->
+                        <div id="infinite-scroll-loading" style="display: none; padding: 24px 0; align-items: center; justify-content: center; gap: 12px; color: var(--navy-800); font-weight: 600; font-size: 14px;">
+                            <span class="infinite-spinner"></span>
+                            <span>Cargando más productos del catálogo INEXUS...</span>
+                        </div>
+
+                        <!-- Manual Trigger Button (as subtle fallback / trigger) -->
+                        <div id="infinite-scroll-manual" style="padding: 10px 0; display: {{ $products->hasMorePages() ? 'block' : 'none' }};">
+                            <button type="button" id="btn-load-more" class="btn btn-outline" style="border-radius: 30px; padding: 12px 32px; font-weight: 700; font-size: 13.5px; border-color: #cbd5e1; color: var(--navy-800); background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.25s ease;">
+                                ↓ Cargar más productos
+                            </button>
+                        </div>
+
+                        <!-- End of Catalog Reached Note -->
+                        <div id="infinite-scroll-end" style="display: {{ !$products->hasMorePages() ? 'block' : 'none' }}; padding: 30px 0 10px; color: #94a3b8; font-size: 13px; font-weight: 500;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 14px;">
+                                <div style="height: 1px; width: 60px; background: #e2e8f0;"></div>
+                                <span>Has llegado al final del catálogo ({{ $products->total() }} productos)</span>
+                                <div style="height: 1px; width: 60px; background: #e2e8f0;"></div>
+                            </div>
+                        </div>
                     </div>
                 @else
                     <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:60px 20px; text-align:center;">
