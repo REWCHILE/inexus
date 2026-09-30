@@ -182,63 +182,82 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(15, 23, 42, 0.75);
-        backdrop-filter: blur(4px);
+        background: rgba(15, 23, 42, 0.78);
+        backdrop-filter: blur(5px);
         z-index: 99999;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 16px;
+        padding: 20px;
         box-sizing: border-box;
     }
     .pudo-modal-dialog {
         background: #ffffff;
-        border-radius: 14px;
-        width: 100%;
-        max-width: 860px;
-        max-height: 92vh;
+        border-radius: 16px;
+        width: 95vw;
+        max-width: 1240px;
+        height: 88vh;
+        min-height: 600px;
+        max-height: 860px;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .pudo-modal-header {
-        padding: 14px 20px;
+        padding: 14px 22px;
         background: #f8fafc;
         border-bottom: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-shrink: 0;
     }
     .pudo-modal-close {
         background: none;
         border: none;
-        font-size: 26px;
+        font-size: 28px;
         line-height: 1;
         color: #64748b;
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        transition: all 0.2s;
     }
     .pudo-modal-close:hover {
         background: #e2e8f0;
         color: #0f172a;
     }
     .pudo-modal-body {
-        flex: 1;
-        height: 560px;
+        flex: 1 1 auto;
         position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 480px;
         background: #ffffff;
+        overflow: hidden;
+    }
+    .pudo-modal-body iframe,
+    #pudo-iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+        border: none !important;
+        display: block;
     }
     .pudo-modal-footer {
-        padding: 12px 20px;
+        padding: 12px 22px;
         background: #f8fafc;
         border-top: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 13px;
-        color: #64748b;
+        font-size: 13.5px;
+        color: #475569;
+        flex-shrink: 0;
     }
 
     /* Mobile Accordion Preview */
@@ -294,11 +313,43 @@
         .checkout-wrapper {
             padding: 20px 12px 40px;
         }
+    }
+
+    @media (max-width: 768px) {
+        .pudo-modal-overlay {
+            padding: 0 !important;
+        }
         .pudo-modal-dialog {
-            max-height: 96vh;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            min-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+        }
+        .pudo-modal-header {
+            padding: 12px 14px !important;
+        }
+        .pudo-modal-header h3 {
+            font-size: 15px !important;
+        }
+        .pudo-modal-header p {
+            display: none !important;
         }
         .pudo-modal-body {
-            height: 480px;
+            height: calc(100vh - 110px) !important;
+            min-height: 0 !important;
+        }
+        .pudo-modal-footer {
+            padding: 10px 14px !important;
+            font-size: 11.5px !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            text-align: center !important;
+        }
+        .pudo-modal-footer button {
+            width: 100% !important;
         }
     }
 </style>
@@ -556,17 +607,17 @@
                         <!-- SECTION B: Fields for "Punto Pick Up Blue Express" -->
                         <div id="section-pickup-fields" style="display:none; margin-top:16px;">
                             <!-- State 1: Unselected -->
-                            <div id="pudo-select-container" class="pudo-box-unselected">
-                                <div style="font-size:26px; margin-bottom:6px;">🏪</div>
-                                <div style="font-weight:700; color:#0033a1; font-size:15px; margin-bottom:4px;">
+                            <div id="pudo-select-container" class="pudo-box-unselected" style="padding:22px 18px; background:#f0f7ff; border:2px dashed #0033a1; border-radius:12px;">
+                                <div style="font-size:30px; margin-bottom:6px;">🏪</div>
+                                <div style="font-weight:800; color:#0033a1; font-size:16px; margin-bottom:4px;">
                                     Selecciona tu Punto Blue Express de Retiro
                                 </div>
-                                <p style="font-size:13px; color:#475569; margin:0 auto 14px; max-width:440px;">
-                                    Elige la sucursal, Pronto Copec o minimarket más cercano en tu comuna para retirar cuando quieras.
+                                <p style="font-size:13.5px; color:#475569; margin:0 auto 16px; max-width:460px; line-height:1.45;">
+                                    Elige la sucursal, Pronto Copec o punto oficial más conveniente en tu comuna para retirar a tu propio ritmo.
                                 </p>
-                                <button type="button" class="btn btn-primary" onclick="openPudoModal()" style="background:#0033a1; border-color:#0033a1; font-size:14px; padding:10px 22px; display:inline-flex; align-items:center; gap:8px;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-                                    <span>Elegir Punto Blue en el Mapa Oficial</span>
+                                <button type="button" class="btn btn-primary" onclick="openPudoModal()" style="background:#0033a1; border-color:#0033a1; font-size:14.5px; font-weight:700; padding:12px 26px; display:inline-flex; align-items:center; gap:10px; border-radius:8px; box-shadow:0 4px 14px rgba(0,51,161,0.22); cursor:pointer;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                                    <span>Abrir Mapa Oficial de Puntos Blue Express</span>
                                 </button>
                             </div>
 
@@ -715,20 +766,35 @@
     <div id="pudo-modal" class="pudo-modal-overlay" style="display:none;" onclick="handleModalBackdropClick(event)">
         <div class="pudo-modal-dialog">
             <div class="pudo-modal-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="{{ asset('images/blue-express.svg') }}" alt="Blue Express" style="height:24px; width:auto;">
-                    <h3 style="margin:0; font-size:16px; font-weight:800; color:#0033a1;">
-                        Buscador Oficial de Puntos Blue Express
-                    </h3>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <img src="{{ asset('images/blue-express.svg') }}" alt="Blue Express" style="height:26px; width:auto;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <h3 style="margin:0; font-size:16.5px; font-weight:800; color:#0033a1;">
+                                Buscador Oficial de Puntos Blue Express
+                            </h3>
+                            <span class="badge" style="background:#0033a1; color:#fff; font-size:11px; padding:2px 8px; border-radius:4px; font-weight:700;">
+                                Red Nacional
+                            </span>
+                        </div>
+                        <p style="margin:2px 0 0; font-size:12.5px; color:#64748b;">
+                            Ubica tu comuna o dirección y haz clic sobre el Punto de Retiro en el mapa
+                        </p>
+                    </div>
                 </div>
                 <button type="button" class="pudo-modal-close" onclick="closePudoModal()" aria-label="Cerrar">&times;</button>
             </div>
             <div class="pudo-modal-body">
-                <iframe id="pudo-iframe" src="https://widget-pudo.blue.cl" title="Buscador Puntos Blue Express" style="width:100%; height:100%; border:none;"></iframe>
+                <iframe id="pudo-iframe" src="https://widget-pudo.blue.cl" title="Buscador Puntos Blue Express"></iframe>
             </div>
             <div class="pudo-modal-footer">
-                <span>📍 Haz clic en tu Punto Blue Express preferido en el mapa para confirmar la sucursal de retiro.</span>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="closePudoModal()">Cerrar</button>
+                <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#334155; font-weight:600;">
+                    <span style="font-size:16px;">📍</span>
+                    <span>Haz clic en tu sucursal o Punto Blue Express en el mapa para confirmar tu retiro.</span>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closePudoModal()" style="font-weight:700; padding:6px 20px;">
+                    Cerrar
+                </button>
             </div>
         </div>
     </div>
