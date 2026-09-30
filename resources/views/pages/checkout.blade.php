@@ -10,9 +10,298 @@
     $communes = $communes ?? app(\App\Services\BlueExpressService::class)->getCommunesByRegion($initialRegion);
     $initialCommune = $initialCommune ?? 'Santiago';
     $shippingServiceName = $shippingServiceName ?? 'Blue Express Express (Terrestre)';
-    $shippingPromise = $shippingPromise ?? 'Hasta 2 días hábiles';
-    $isFreeShipping = $isFreeShipping ?? ($subtotal >= 150000);
+    $shippingPromise = $shippingPromise ?? 'Hasta 2 a 3 días hábiles';
+    $initialShippingType = $initialShippingType ?? 'domicilio';
+    $isFreeShipping = $isFreeShipping ?? false;
 @endphp
+
+<style>
+    /* Prevent floating elements from obstructing checkout inputs on mobile */
+    .floating-whatsapp {
+        display: none !important;
+    }
+
+    /* Checkout Layout Grid */
+    .checkout-wrapper {
+        padding: 30px 16px 60px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 0.85fr;
+        gap: 32px;
+        align-items: start;
+    }
+    .checkout-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        margin-bottom: 22px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .checkout-card-title {
+        font-size: 17.5px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--navy-900);
+    }
+    .step-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+
+    /* Form Fields */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 14px;
+    }
+    .form-group {
+        margin-bottom: 14px;
+    }
+    .form-label {
+        display: block;
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 6px;
+        color: var(--navy-800);
+    }
+    .form-control {
+        width: 100%;
+        height: 46px;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        font-size: 14.5px;
+        background: #ffffff;
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    /* Shipping Method Selector (Domicilio vs Punto Pick Up) */
+    .shipping-method-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+    .shipping-option-card {
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 16px 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: #ffffff;
+        user-select: none;
+    }
+    .shipping-option-card:hover {
+        border-color: #93c5fd;
+        background: #f8fafc;
+    }
+    .shipping-option-card.active {
+        border-color: #0033a1;
+        background: #eff6ff;
+        box-shadow: 0 2px 8px rgba(0, 51, 161, 0.08);
+    }
+    .shipping-option-icon {
+        font-size: 22px;
+        line-height: 1;
+        margin-top: 2px;
+    }
+    .shipping-option-title {
+        font-weight: 700;
+        font-size: 14.5px;
+        color: var(--navy-900);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .shipping-option-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 3px;
+        line-height: 1.35;
+    }
+    .shipping-option-rate {
+        margin-top: 6px;
+        font-weight: 800;
+        font-size: 13.5px;
+        color: #0033a1;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Punto Pick Up Selection Box & Modal */
+    .pudo-box-unselected {
+        background: #f8fafc;
+        border: 2px dashed #0033a1;
+        border-radius: var(--radius-md);
+        padding: 18px;
+        text-align: center;
+        margin-top: 14px;
+    }
+    .pudo-box-confirmed {
+        background: #f0fdf4;
+        border: 2px solid #16a34a;
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+    }
+
+    /* Modal for Blue Express PUDO iframe */
+    .pudo-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+    .pudo-modal-dialog {
+        background: #ffffff;
+        border-radius: 14px;
+        width: 100%;
+        max-width: 860px;
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .pudo-modal-header {
+        padding: 14px 20px;
+        background: #f8fafc;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .pudo-modal-close {
+        background: none;
+        border: none;
+        font-size: 26px;
+        line-height: 1;
+        color: #64748b;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+    .pudo-modal-close:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+    .pudo-modal-body {
+        flex: 1;
+        height: 560px;
+        position: relative;
+        background: #ffffff;
+    }
+    .pudo-modal-footer {
+        padding: 12px 20px;
+        background: #f8fafc;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    /* Mobile Accordion Preview */
+    .mobile-summary-toggle {
+        display: none;
+        background: #f1f5f9;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 700;
+        font-size: 14.5px;
+        color: var(--navy-900);
+    }
+    .mobile-summary-content {
+        display: none;
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 991px) {
+        .checkout-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .checkout-summary-column {
+            position: static !important;
+            order: 2; /* Forces order summary & pay button strictly to the very bottom */
+            width: 100%;
+        }
+        .mobile-summary-toggle {
+            display: flex;
+        }
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+        .shipping-method-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .radio-cards {
+            grid-template-columns: 1fr;
+        }
+        .checkout-wrapper {
+            padding: 20px 12px 40px;
+        }
+        .pudo-modal-dialog {
+            max-height: 96vh;
+        }
+        .pudo-modal-body {
+            height: 480px;
+        }
+    }
+</style>
 
     <!-- Breadcrumb bar -->
     <div style="background:#f1f5f9; padding: 14px 0; border-bottom: 1px solid var(--border-color);">
@@ -25,51 +314,100 @@
         </div>
     </div>
 
-    <div class="container" style="padding: 40px 20px;">
-        <h1 style="font-size:28px; margin-bottom:24px;">Finalizar Pedido Seguro</h1>
+    <div class="checkout-wrapper">
+        <h1 style="font-size:26px; font-weight:800; color:var(--navy-900); margin-bottom:20px;">Finalizar Pedido Seguro</h1>
 
-        <form action="{{ route('checkout.process') }}" method="POST">
+        <!-- Mobile Top Toggle: Quick Items Preview -->
+        <div class="mobile-summary-toggle" onclick="toggleMobileSummary()">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span>Ver resumen del pedido ({{ count($cart) }} {{ count($cart) === 1 ? 'producto' : 'productos' }})</span>
+                <span id="mobile-summary-arrow" style="font-size:12px; transition:transform 0.2s;">▼</span>
+            </div>
+            <span id="mobile-top-total" style="color:var(--primary); font-weight:800; font-family:'Plus Jakarta Sans';">
+                ${{ number_format($total, 0, ',', '.') }} CLP
+            </span>
+        </div>
+
+        <div id="mobile-summary-dropdown" class="mobile-summary-content">
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:14px;">
+                @foreach($cart as $item)
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" style="width:36px; height:36px; object-fit:contain; border:1px solid var(--border-color); border-radius:6px; padding:2px;">
+                            <div>
+                                <div style="font-weight:600; line-height:1.2;">{{ $item['name'] }}</div>
+                                <span style="font-size:11.5px; color:var(--text-muted);">Cant: {{ $item['quantity'] }}</span>
+                            </div>
+                        </div>
+                        <span style="font-weight:700; white-space:nowrap;">${{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}</span>
+                    </div>
+                @endforeach
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:8px;">
+                El desglose detallado con costos de envío finales está disponible al final de la página.
+            </div>
+        </div>
+
+        <form action="{{ route('checkout.process') }}" method="POST" id="checkout-form">
             @csrf
+
+            <!-- Hidden Fields for Tracking Selection -->
+            <input type="hidden" name="shipping_type" id="shipping_type" value="{{ $initialShippingType }}">
+            <input type="hidden" name="agency_id" id="agency_id" value="">
+            <input type="hidden" name="agency_name" id="agency_name" value="">
+            <input type="hidden" name="agency_address" id="agency_address" value="">
+            <input type="hidden" name="agency_city" id="agency_city" value="">
+            <input type="hidden" name="agency_state" id="agency_state" value="">
 
             <div class="checkout-grid">
                 
-                <!-- Left Column: Forms -->
-                <div>
+                <!-- Left Column: Step-by-Step Forms -->
+                <div class="checkout-forms-column">
                     
-                    <!-- 1. Customer Details -->
+                    <!-- 1. Customer Details (Nombre y Apellido separated) -->
                     <div class="checkout-card">
                         <h2 class="checkout-card-title">
-                            <span style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">1</span>
+                            <span class="step-number">1</span>
                             Información de Contacto
                         </h2>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label" for="customer_name">Nombre y Apellido *</label>
-                                <input type="text" id="customer_name" name="customer_name" class="form-control" required placeholder="Ej: Gonzalo Martínez" value="{{ old('customer_name') }}">
+                                <label class="form-label" for="customer_first_name">Nombre *</label>
+                                <input type="text" id="customer_first_name" name="customer_first_name" class="form-control" required placeholder="Ej: Gonzalo" value="{{ old('customer_first_name') }}">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="customer_email">Correo Electrónico *</label>
-                                <input type="email" id="customer_email" name="customer_email" class="form-control" required placeholder="tu-email@empresa.cl" value="{{ old('customer_email') }}">
+                                <label class="form-label" for="customer_last_name">Apellido *</label>
+                                <input type="text" id="customer_last_name" name="customer_last_name" class="form-control" required placeholder="Ej: Martínez" value="{{ old('customer_last_name') }}">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label" for="customer_phone">Teléfono / WhatsApp *</label>
-                                <input type="text" id="customer_phone" name="customer_phone" class="form-control" required placeholder="+56 9 1234 5678" value="{{ old('customer_phone') }}">
+                                <label class="form-label" for="customer_email">Correo Electrónico *</label>
+                                <input type="email" id="customer_email" name="customer_email" class="form-control" required placeholder="tu-email@empresa.cl" value="{{ old('customer_email') }}">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="customer_rut">RUT *</label>
-                                <input type="text" id="customer_rut" name="customer_rut" class="form-control" required placeholder="Ej: 12.345.678-9" value="{{ old('customer_rut') }}">
+                                <label class="form-label" for="customer_phone">Teléfono / WhatsApp *</label>
+                                <input type="tel" id="customer_phone" name="customer_phone" class="form-control" required placeholder="+56 9 1234 5678" value="{{ old('customer_phone') }}">
                             </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label" for="customer_rut">RUT Comprador *</label>
+                            <input type="text" id="customer_rut" name="customer_rut" class="form-control" required placeholder="Ej: 12.345.678-9" value="{{ old('customer_rut') }}">
                         </div>
                     </div>
 
                     <!-- 2. Document Type (Boleta vs Factura) -->
                     <div class="checkout-card">
                         <h2 class="checkout-card-title">
-                            <span style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">2</span>
+                            <span class="step-number">2</span>
                             Documento Tributario (SII Chile)
                         </h2>
 
@@ -103,21 +441,58 @@
                                     <input type="text" id="company_rut" name="company_rut" class="form-control" placeholder="76.123.456-7" value="{{ old('company_rut') }}">
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" style="margin-bottom:0;">
                                 <label class="form-label" for="company_giro">Giro Comercial *</label>
                                 <input type="text" id="company_giro" name="company_giro" class="form-control" placeholder="Ej: Servicios de informática, consultoría..." value="{{ old('company_giro') }}">
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3. Shipping Address -->
+                    <!-- 3. Delivery Method: Domicilio vs Punto Pick Up Blue Express -->
                     <div class="checkout-card">
-                        <h2 class="checkout-card-title">
-                            <span style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">3</span>
-                            Dirección de Despacho y Courier
-                        </h2>
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                            <h2 class="checkout-card-title" style="margin-bottom:0;">
+                                <span class="step-number">3</span>
+                                Método de Entrega & Courier
+                            </h2>
+                            <div style="display:flex; align-items:center; gap:6px; background:#eff6ff; padding:4px 10px; border-radius:6px; border:1px solid #bfdbfe;">
+                                <img src="{{ asset('images/blue-express.svg') }}" alt="Blue Express" style="height:18px; width:auto;">
+                                <span style="font-size:11.5px; font-weight:700; color:#0033a1;">Courier Oficial</span>
+                            </div>
+                        </div>
 
-                        <div class="form-row">
+                        <!-- Delivery Modality Selection (Domicilio vs Punto Pick Up) -->
+                        <div class="shipping-method-grid">
+                            <label class="shipping-option-card active" id="card-delivery-domicilio" onclick="setShippingType('domicilio')">
+                                <input type="radio" name="delivery_choice" value="domicilio" checked style="margin-top:3px; accent-color:#0033a1;">
+                                <div style="flex:1;">
+                                    <div class="shipping-option-title">
+                                        <span>🚚 Envío a Domicilio</span>
+                                    </div>
+                                    <div class="shipping-option-desc">Despacho directo con Blue Express a tu casa u oficina</div>
+                                    <div class="shipping-option-rate" id="card-price-domicilio">
+                                        ${{ number_format($quoteDomicilio['cost'] ?? 3067, 0, ',', '.') }} CLP
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="shipping-option-card" id="card-delivery-pickup" onclick="setShippingType('pickup')">
+                                <input type="radio" name="delivery_choice" value="pickup" style="margin-top:3px; accent-color:#0033a1;">
+                                <div style="flex:1;">
+                                    <div class="shipping-option-title">
+                                        <span>🏪 Punto Pick Up Blue</span>
+                                        <span class="badge" style="background:#0033a1; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px;">Económico</span>
+                                    </div>
+                                    <div class="shipping-option-desc">Retiro en Pronto Copec, agencias y minimarkets oficiales</div>
+                                    <div class="shipping-option-rate" id="card-price-pickup">
+                                        ${{ number_format($quotePickup['cost'] ?? 2395, 0, ',', '.') }} CLP
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Destination Region and Commune Selectors -->
+                        <div class="form-row" style="margin-top:16px;">
                             <div class="form-group">
                                 <label class="form-label" for="shipping_region">Región de Destino *</label>
                                 <select id="shipping_region" name="shipping_region_code" class="form-control" required onchange="handleRegionChange(this.value)">
@@ -130,7 +505,7 @@
                                 <input type="hidden" name="shipping_region" id="shipping_region_name" value="{{ $regions[$initialRegion]['name'] ?? 'Región Metropolitana de Santiago' }}">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="shipping_city">Comuna de Entrega *</label>
+                                <label class="form-label" for="shipping_city">Comuna de Destino *</label>
                                 <select id="shipping_city" name="shipping_city" class="form-control" required onchange="handleCommuneChange(this.value)">
                                     @foreach($communes as $commune)
                                         <option value="{{ $commune['name'] }}" {{ $commune['name'] === $initialCommune ? 'selected' : '' }}>
@@ -141,16 +516,15 @@
                             </div>
                         </div>
 
-                        <!-- Blue Express Rate Card -->
-                        <div id="bluex-rate-card" style="margin-top:14px; background:#f8fafc; border:1.5px solid #0033a1; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 1px 3px rgba(0,51,161,0.06);">
+                        <!-- Blue Express Rate Card (Live Quote) -->
+                        <div id="bluex-rate-card" style="background:#f8fafc; border:1.5px solid #0033a1; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 1px 3px rgba(0,51,161,0.06); margin-top:10px;">
                             <div style="display:flex; align-items:center; gap:12px;">
-                                <div style="width:44px; height:44px; border-radius:8px; background:#fff; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; padding:4px; flex-shrink:0; box-shadow:0 2px 4px rgba(0,0,0,0.04);">
+                                <div style="width:44px; height:44px; border-radius:8px; background:#fff; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; padding:4px; flex-shrink:0;">
                                     <img src="{{ asset('images/blue-express.svg') }}" alt="Blue Express" style="max-height:34px; max-width:34px; object-fit:contain;">
                                 </div>
                                 <div>
                                     <div style="display:flex; align-items:center; gap:8px;">
                                         <span style="font-weight:700; color:#0033a1; font-size:14.5px;" id="bx-service-name">{{ $shippingServiceName }}</span>
-                                        <span class="badge" style="background:#0033a1; color:#fff; font-size:10.5px; padding:2px 7px; border-radius:4px; font-weight:600;">Courier Oficial</span>
                                     </div>
                                     <div style="font-size:12.5px; color:#64748b; margin-top:2px;" id="bx-promise-display">
                                         ⚡ Tiempo estimado: <strong style="color:#0f172a;" id="bx-promise-text">{{ $shippingPromise }}</strong>
@@ -167,21 +541,65 @@
                             </div>
                         </div>
 
-                        <div class="form-group" style="margin-top:16px;">
-                            <label class="form-label" for="shipping_address">Dirección (Calle y Número) *</label>
-                            <input type="text" id="shipping_address" name="shipping_address" class="form-control" required placeholder="Ej: Av. Andrés Bello 2457, Providencia" value="{{ old('shipping_address') }}">
+                        <!-- SECTION A: Fields for "Envío a Domicilio" -->
+                        <div id="section-domicilio-fields" style="margin-top:16px;">
+                            <div class="form-group">
+                                <label class="form-label" for="shipping_address">Dirección de Entrega (Calle y Número) *</label>
+                                <input type="text" id="shipping_address" name="shipping_address" class="form-control" placeholder="Ej: Av. Andrés Bello 2457, Providencia" value="{{ old('shipping_address') }}">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label" for="shipping_notes">Depto / Oficina / Referencias de Entrega (Opcional)</label>
+                                <input type="text" id="shipping_notes" name="shipping_notes" class="form-control" placeholder="Depto 804 / Dejar en conserjería..." value="{{ old('shipping_notes') }}">
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label" for="shipping_notes">Instrucciones o Referencias de Entrega (Opcional)</label>
-                            <input type="text" id="shipping_notes" name="shipping_notes" class="form-control" placeholder="Depto 804 / Dejar en conserjería..." value="{{ old('shipping_notes') }}">
+                        <!-- SECTION B: Fields for "Punto Pick Up Blue Express" -->
+                        <div id="section-pickup-fields" style="display:none; margin-top:16px;">
+                            <!-- State 1: Unselected -->
+                            <div id="pudo-select-container" class="pudo-box-unselected">
+                                <div style="font-size:26px; margin-bottom:6px;">🏪</div>
+                                <div style="font-weight:700; color:#0033a1; font-size:15px; margin-bottom:4px;">
+                                    Selecciona tu Punto Blue Express de Retiro
+                                </div>
+                                <p style="font-size:13px; color:#475569; margin:0 auto 14px; max-width:440px;">
+                                    Elige la sucursal, Pronto Copec o minimarket más cercano en tu comuna para retirar cuando quieras.
+                                </p>
+                                <button type="button" class="btn btn-primary" onclick="openPudoModal()" style="background:#0033a1; border-color:#0033a1; font-size:14px; padding:10px 22px; display:inline-flex; align-items:center; gap:8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                                    <span>Elegir Punto Blue en el Mapa Oficial</span>
+                                </button>
+                            </div>
+
+                            <!-- State 2: Confirmed -->
+                            <div id="pudo-confirmed-container" class="pudo-box-confirmed" style="display:none;">
+                                <div style="display:flex; align-items:flex-start; gap:12px;">
+                                    <div style="width:38px; height:38px; border-radius:50%; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:18px; font-weight:800;">
+                                        ✓
+                                    </div>
+                                    <div>
+                                        <span class="badge" style="background:#16a34a; color:#fff; font-size:11px; padding:2px 8px; border-radius:4px; font-weight:700;">
+                                            PUNTO BLUE EXPRESS SELECCIONADO
+                                        </span>
+                                        <h4 id="display-agency-name" style="font-size:15.5px; font-weight:800; color:#0f172a; margin:4px 0 2px;">
+                                            --
+                                        </h4>
+                                        <p id="display-agency-address" style="font-size:13px; color:#475569; margin:0;">
+                                            --
+                                        </p>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openPudoModal()" style="font-size:12.5px; white-space:nowrap; padding:6px 12px;">
+                                    Cambiar Punto
+                                </button>
+                            </div>
                         </div>
+
                     </div>
 
                     <!-- 4. Payment Method Selection -->
                     <div class="checkout-card">
                         <h2 class="checkout-card-title">
-                            <span style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">4</span>
+                            <span class="step-number">4</span>
                             Método de Pago en Pesos Chilenos (CLP)
                         </h2>
 
@@ -194,7 +612,7 @@
                                         <span style="font-weight:700; font-size:15px; color:var(--navy-900);">Mercado Pago (Tarjetas Débito / Crédito / Webpay)</span>
                                         <span class="badge badge-info" style="font-size:11px;">Recomendado</span>
                                     </div>
-                                    <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">
+                                    <p style="font-size:13px; color:var(--text-muted); margin-top:4px; margin-bottom:0;">
                                         Paga en hasta 12 cuotas con tarjetas bancarias chilenas, Redcompra, Cuenta RUT o saldo en Mercado Pago en CLP.
                                     </p>
                                 </div>
@@ -208,7 +626,7 @@
                                         <span style="font-weight:700; font-size:15px; color:var(--navy-900);">Transferencia Electrónica Directa</span>
                                         <span class="badge" style="background:#dcfce7; color:#15803d; font-size:11px; font-weight:800;">5% DE DESCUENTO INMEDIATO</span>
                                     </div>
-                                    <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">
+                                    <p style="font-size:13px; color:var(--text-muted); margin-top:4px; margin-bottom:0;">
                                         Ahorra un 5% en tu compra pagando desde cualquier banco chileno (Banco de Chile, Santander, BCI, BancoEstado, etc.). Validación rápida con comprobante.
                                     </p>
                                 </div>
@@ -218,10 +636,10 @@
 
                 </div>
 
-                <!-- Right Column: Order Summary -->
-                <div>
+                <!-- Right Column (In Desktop: Sticky Sidebar. In Mobile: Full-width at the bottom) -->
+                <div class="checkout-summary-column">
                     <div class="checkout-card" style="position:sticky; top:100px;">
-                        <h3 style="font-size:18px; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+                        <h3 style="font-size:18px; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border-color); font-weight:800; color:var(--navy-900);">
                             Resumen de Compra
                         </h3>
 
@@ -257,7 +675,7 @@
                             </div>
 
                             <div style="display:flex; justify-content:space-between;">
-                                <span style="color:var(--text-muted);">Despacho Blue Express:</span>
+                                <span style="color:var(--text-muted);" id="summary-shipping-label">Despacho Blue Express:</span>
                                 <span id="summary-shipping-display" style="font-weight:700; color:{{ $shipping === 0 ? '#166534' : 'var(--text-main)' }};">
                                     {{ $shipping === 0 ? 'GRATIS' : '$' . number_format($shipping, 0, ',', '.') . ' CLP' }}
                                 </span>
@@ -275,14 +693,15 @@
                             </span>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-block btn-lg">
+                        <!-- Primary Payment Submission Button -->
+                        <button type="submit" id="btn-submit-order" class="btn btn-primary btn-block btn-lg" style="height:50px; font-size:16px; font-weight:800;">
                             <span>Confirmar y Proceder al Pago</span>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </button>
 
-                        <div style="margin-top:16px; text-align:center; font-size:12px; color:var(--text-muted);">
+                        <div style="margin-top:16px; text-align:center; font-size:12px; color:var(--text-muted); line-height:1.4;">
                             Al confirmar tu compra aceptas nuestros <a href="{{ route('page.terms') }}" target="_blank" style="text-decoration:underline;">Términos y Condiciones</a> y <a href="{{ route('page.returns') }}" target="_blank" style="text-decoration:underline;">Garantía Legal</a>.
                         </div>
                     </div>
@@ -292,6 +711,28 @@
         </form>
     </div>
 
+    <!-- Official Blue Express PUDO Modal Selector -->
+    <div id="pudo-modal" class="pudo-modal-overlay" style="display:none;" onclick="handleModalBackdropClick(event)">
+        <div class="pudo-modal-dialog">
+            <div class="pudo-modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="{{ asset('images/blue-express.svg') }}" alt="Blue Express" style="height:24px; width:auto;">
+                    <h3 style="margin:0; font-size:16px; font-weight:800; color:#0033a1;">
+                        Buscador Oficial de Puntos Blue Express
+                    </h3>
+                </div>
+                <button type="button" class="pudo-modal-close" onclick="closePudoModal()" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="pudo-modal-body">
+                <iframe id="pudo-iframe" src="https://widget-pudo.blue.cl" title="Buscador Puntos Blue Express" style="width:100%; height:100%; border:none;"></iframe>
+            </div>
+            <div class="pudo-modal-footer">
+                <span>📍 Haz clic en tu Punto Blue Express preferido en el mapa para confirmar la sucursal de retiro.</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closePudoModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('scripts')
@@ -299,12 +740,19 @@
     const baseSubtotal = {{ $subtotal }};
     let currentShippingCost = {{ $shipping }};
     let currentPaymentMethod = 'mercadopago';
+    let currentShippingType = '{{ $initialShippingType }}';
+
+    // Store calculated quotes for both options
+    let quoteDomicilioCost = {{ $quoteDomicilio['cost'] ?? 3067 }};
+    let quotePickupCost = {{ $quotePickup['cost'] ?? 2395 }};
 
     function updateTotals() {
         const discountRow = document.getElementById('transfer-discount-row');
         const discountVal = document.getElementById('transfer-discount-val');
         const totalDisplay = document.getElementById('final-total-display');
+        const mobileTopTotal = document.getElementById('mobile-top-total');
         const shippingDisplay = document.getElementById('summary-shipping-display');
+        const shippingLabel = document.getElementById('summary-shipping-label');
 
         let discount = 0;
         if (currentPaymentMethod === 'transferencia') {
@@ -316,8 +764,12 @@
         }
 
         const total = (baseSubtotal - discount) + currentShippingCost;
-        totalDisplay.innerText = '$' + total.toLocaleString('es-CL') + ' CLP';
+        const formattedTotal = '$' + total.toLocaleString('es-CL') + ' CLP';
+        totalDisplay.innerText = formattedTotal;
+        if (mobileTopTotal) mobileTopTotal.innerText = formattedTotal;
         totalDisplay.style.color = currentPaymentMethod === 'transferencia' ? '#15803d' : 'var(--primary)';
+
+        shippingLabel.innerText = currentShippingType === 'pickup' ? 'Punto Pick Up Blue Express:' : 'Despacho Domicilio Blue Express:';
 
         if (currentShippingCost === 0) {
             shippingDisplay.innerText = 'GRATIS';
@@ -325,6 +777,18 @@
         } else {
             shippingDisplay.innerText = '$' + currentShippingCost.toLocaleString('es-CL') + ' CLP';
             shippingDisplay.style.color = 'var(--text-main)';
+        }
+    }
+
+    function toggleMobileSummary() {
+        const dropdown = document.getElementById('mobile-summary-dropdown');
+        const arrow = document.getElementById('mobile-summary-arrow');
+        if (dropdown.style.display === 'block') {
+            dropdown.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+        } else {
+            dropdown.style.display = 'block';
+            arrow.style.transform = 'rotate(180deg)';
         }
     }
 
@@ -345,6 +809,121 @@
             tfLabel.style.background = '#ffffff';
         }
         updateTotals();
+    }
+
+    function setShippingType(type) {
+        currentShippingType = type;
+        document.getElementById('shipping_type').value = type;
+
+        const cardDom = document.getElementById('card-delivery-domicilio');
+        const cardPick = document.getElementById('card-delivery-pickup');
+        const radioDom = document.querySelector('input[name="delivery_choice"][value="domicilio"]');
+        const radioPick = document.querySelector('input[name="delivery_choice"][value="pickup"]');
+        const secDom = document.getElementById('section-domicilio-fields');
+        const secPick = document.getElementById('section-pickup-fields');
+        const addressInput = document.getElementById('shipping_address');
+
+        if (type === 'pickup') {
+            cardDom.classList.remove('active');
+            cardPick.classList.add('active');
+            radioPick.checked = true;
+            secDom.style.display = 'none';
+            secPick.style.display = 'block';
+            addressInput.removeAttribute('required');
+
+            // If no point selected yet, open modal automatically to prompt customer
+            const agencyId = document.getElementById('agency_id').value;
+            if (!agencyId) {
+                openPudoModal();
+            }
+        } else {
+            cardPick.classList.remove('active');
+            cardDom.classList.add('active');
+            radioDom.checked = true;
+            secPick.style.display = 'none';
+            secDom.style.display = 'block';
+            addressInput.setAttribute('required', 'required');
+        }
+
+        const currentCommune = document.getElementById('shipping_city').value;
+        handleCommuneChange(currentCommune);
+    }
+
+    function openPudoModal() {
+        const modal = document.getElementById('pudo-modal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePudoModal() {
+        const modal = document.getElementById('pudo-modal');
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function handleModalBackdropClick(event) {
+        if (event.target && event.target.id === 'pudo-modal') {
+            closePudoModal();
+        }
+    }
+
+    // Listen to official Blue Express PUDO postMessage
+    window.addEventListener('message', function (event) {
+        if (event.data && (event.data.type === 'pudo:select' || event.data.type === 'pudo:selected')) {
+            handlePudoSelect(event.data.payload || event.data.data || event.data);
+        }
+    });
+
+    function handlePudoSelect(payload) {
+        if (!payload) return;
+
+        const agencyId = payload.agency_id || payload.id || payload.agencyId || '';
+        const agencyName = payload.agency_name || payload.name || payload.agencyName || 'Punto Blue Express';
+        
+        let street = '';
+        let number = '';
+        let city = '';
+        let region = '';
+
+        if (payload.location) {
+            street = payload.location.street_name || payload.location.street || '';
+            number = payload.location.street_number || payload.location.number || '';
+            city = payload.location.city_name || payload.location.city || '';
+            region = payload.location.region_code || payload.location.region || '';
+        } else if (payload.address) {
+            street = payload.address;
+        }
+
+        const fullAddress = [street, number].filter(Boolean).join(' ') + (city ? ', ' + city : '');
+
+        // Populate hidden form fields
+        document.getElementById('agency_id').value = agencyId;
+        document.getElementById('agency_name').value = agencyName;
+        document.getElementById('agency_address').value = fullAddress;
+        document.getElementById('agency_city').value = city;
+        document.getElementById('agency_state').value = region;
+
+        // Update UI confirmed box
+        document.getElementById('display-agency-name').innerText = agencyName;
+        document.getElementById('display-agency-address').innerText = fullAddress || 'Dirección de retiro confirmada';
+        document.getElementById('pudo-select-container').style.display = 'none';
+        document.getElementById('pudo-confirmed-container').style.display = 'flex';
+
+        closePudoModal();
+
+        // If agency has a specific city, select it in the dropdown if available
+        if (city) {
+            const citySelect = document.getElementById('shipping_city');
+            for (let i = 0; i < citySelect.options.length; i++) {
+                if (citySelect.options[i].value.toLowerCase() === city.toLowerCase()) {
+                    citySelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Trigger rate recalculation
+        handleCommuneChange(document.getElementById('shipping_city').value);
     }
 
     function handleRegionChange(regionCode) {
@@ -389,6 +968,8 @@
         const costBadge = document.getElementById('bx-cost-badge');
         const promiseText = document.getElementById('bx-promise-text');
         const serviceName = document.getElementById('bx-service-name');
+        const cardPriceDom = document.getElementById('card-price-domicilio');
+        const cardPricePick = document.getElementById('card-price-pickup');
 
         spinner.style.display = 'inline-flex';
         costBadge.style.opacity = '0.4';
@@ -404,7 +985,8 @@
                 body: JSON.stringify({
                     region_code: regionCode,
                     commune_name: communeName,
-                    payment_method: currentPaymentMethod
+                    payment_method: currentPaymentMethod,
+                    shipping_type: currentShippingType
                 })
             })
             .then(res => res.json())
@@ -420,6 +1002,13 @@
                     if (res.service_name) {
                         serviceName.innerText = res.service_name;
                     }
+
+                    if (currentShippingType === 'domicilio') {
+                        cardPriceDom.innerText = res.shipping_formatted;
+                    } else {
+                        cardPricePick.innerText = res.shipping_formatted;
+                    }
+
                     updateTotals();
                 }
             })
@@ -430,5 +1019,19 @@
             });
         }, 200);
     }
+
+    // Checkout form validation before submit
+    document.getElementById('checkout-form').addEventListener('submit', function (e) {
+        if (currentShippingType === 'pickup') {
+            const agencyId = document.getElementById('agency_id').value;
+            const agencyName = document.getElementById('agency_name').value;
+            if (!agencyId && !agencyName) {
+                e.preventDefault();
+                alert('Por favor selecciona tu Punto Blue Express de retiro en el mapa antes de continuar.');
+                openPudoModal();
+                return false;
+            }
+        }
+    });
 </script>
 @endsection

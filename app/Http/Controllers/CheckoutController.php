@@ -38,19 +38,23 @@ class CheckoutController extends Controller
         $communes = $this->blueExpress->getCommunesByRegion($initialRegion);
         $initialCommune = 'Santiago';
 
-        $quote = $this->blueExpress->quoteShipping($initialRegion, $initialCommune, $cart, $subtotal);
-        $shipping = $quote['cost'];
-        $shippingCourier = $quote['courier'];
-        $shippingPromise = $quote['promise_day'];
-        $shippingServiceName = $quote['service_name'];
-        $isFreeShipping = $quote['is_free'];
+        $quoteDomicilio = $this->blueExpress->quoteShipping($initialRegion, $initialCommune, $cart, $subtotal, 'domicilio');
+        $quotePickup = $this->blueExpress->quoteShipping($initialRegion, $initialCommune, $cart, $subtotal, 'pickup');
+
+        $initialShippingType = 'domicilio';
+        $shipping = $quoteDomicilio['cost'];
+        $shippingCourier = $quoteDomicilio['courier'];
+        $shippingPromise = $quoteDomicilio['promise_day'];
+        $shippingServiceName = $quoteDomicilio['service_name'];
+        $isFreeShipping = $quoteDomicilio['is_free'];
 
         $total = $subtotal + $shipping;
 
         return view('pages.checkout', compact(
             'cart', 'subtotal', 'shipping', 'total',
             'regions', 'communes', 'initialRegion', 'initialCommune',
-            'shippingCourier', 'shippingPromise', 'shippingServiceName', 'isFreeShipping'
+            'shippingCourier', 'shippingPromise', 'shippingServiceName', 'isFreeShipping',
+            'initialShippingType', 'quoteDomicilio', 'quotePickup'
         ));
     }
 
@@ -74,8 +78,9 @@ class CheckoutController extends Controller
         $regionCode = $request->input('region_code', 'CL-RM');
         $communeName = $request->input('commune_name', 'Santiago');
         $paymentMethod = $request->input('payment_method', 'mercadopago');
+        $shippingType = $request->input('shipping_type', 'domicilio');
 
-        $quote = $this->blueExpress->quoteShipping($regionCode, $communeName, $cart, $subtotal);
+        $quote = $this->blueExpress->quoteShipping($regionCode, $communeName, $cart, $subtotal, $shippingType);
 
         $discount = 0;
         if ($paymentMethod === 'transferencia') {
@@ -89,6 +94,7 @@ class CheckoutController extends Controller
             'success' => true,
             'courier' => $quote['courier'],
             'service_name' => $quote['service_name'],
+            'shipping_type' => $quote['shipping_type'] ?? $shippingType,
             'promise_day' => $quote['promise_day'],
             'shipping_cost' => $shippingCost,
             'shipping_formatted' => $shippingCost === 0 ? 'GRATIS' : '$' . number_format($shippingCost, 0, ',', '.') . ' CLP',
@@ -110,7 +116,9 @@ class CheckoutController extends Controller
         }
 
         $request->validate([
-            'customer_name' => 'required|string|max:150',
+            'customer_first_name' => 'nullable|string|max:80',
+            'customer_last_name' => 'nullable|string|max:80',
+            'customer_name' => 'nullable|string|max:150',
             'customer_email' => 'required|email|max:150',
             'customer_phone' => 'required|string|max:30',
             'customer_rut' => 'required|string|max:20',
@@ -118,12 +126,24 @@ class CheckoutController extends Controller
             'company_name' => 'nullable|required_if:document_type,factura|string|max:150',
             'company_rut' => 'nullable|required_if:document_type,factura|string|max:20',
             'company_giro' => 'nullable|required_if:document_type,factura|string|max:150',
-            'shipping_address' => 'required|string|max:255',
+            'shipping_type' => 'required|in:domicilio,pickup',
+            'shipping_address' => 'required_if:shipping_type,domicilio|nullable|string|max:255',
+            'agency_name' => 'required_if:shipping_type,pickup|nullable|string|max:255',
+            'agency_address' => 'nullable|string|max:255',
+            'agency_id' => 'nullable|string|max:50',
             'shipping_city' => 'required|string|max:100',
             'shipping_region_code' => 'nullable|string|max:10',
             'shipping_region' => 'nullable|string|max:100',
             'payment_method' => 'required|in:mercadopago,transferencia',
         ]);
+
+        $customerName = trim(($request->customer_first_name ?? '') . ' ' . ($request->customer_last_name ?? ''));
+        if (empty($customerName)) {
+            $customerName = trim((string) $request->customer_name);
+        }
+        if (empty($customerName)) {
+            return back()->withErrors(['customer_first_name' => 'Por favor ingrese su Nombre y Apellido.'])->withInput();
+        }
 
         $subtotal = 0;
         foreach ($cart as $item) {
@@ -132,9 +152,10 @@ class CheckoutController extends Controller
 
         $regionCode = $request->input('shipping_region_code', 'CL-RM');
         $communeName = $request->input('shipping_city', 'Santiago');
+        $shippingType = $request->input('shipping_type', 'domicilio');
 
         // Real-time Blue Express rate calculation
-        $quote = $this->blueExpress->quoteShipping($regionCode, $communeName, $cart, $subtotal);
+        $quote = $this->blueExpress->quoteShipping($regionCode, $communeName, $cart, $subtotal, $shippingType);
         $shipping = $quote['cost'];
         $discount = 0;
 
@@ -148,17 +169,26 @@ class CheckoutController extends Controller
         $regions = $this->blueExpress->getRegions();
         $regionName = $regions[$regionCode]['name'] ?? ($request->shipping_region ?? 'Región Metropolitana de Santiago');
 
+        $finalShippingAddress = $request->shipping_address;
+        if ($shippingType === 'pickup') {
+            $finalShippingAddress = 'Retiro en Punto Blue: ' . $request->agency_name . ($request->agency_address ? ' (' . $request->agency_address . ')' : '');
+        }
+
         $orderNumber = 'INX-' . strtoupper(Str::random(4)) . '-' . rand(1000, 9999);
 
         $notesArray = [];
         if ($discount > 0) {
             $notesArray[] = "Descuento 5% aplicado por Transferencia Electrónica Directa (-$" . number_format($discount, 0, ',', '.') . " CLP)";
         }
-        $notesArray[] = "Courier: Blue Express ({$quote['service_name']}) - Tiempo estimado: {$quote['promise_day']}";
+        if ($shippingType === 'pickup') {
+            $notesArray[] = "Modalidad: Retiro en Punto Blue Express ({$request->agency_name}) - ID Agencia: {$request->agency_id} - Dirección Punto: {$request->agency_address}";
+        } else {
+            $notesArray[] = "Modalidad: Envío a Domicilio - Courier: Blue Express ({$quote['service_name']}) - Tiempo estimado: {$quote['promise_day']}";
+        }
 
         $order = Order::create([
             'order_number' => $orderNumber,
-            'customer_name' => $request->customer_name,
+            'customer_name' => $customerName,
             'customer_email' => $request->customer_email,
             'customer_phone' => $request->customer_phone,
             'customer_rut' => $request->customer_rut,
@@ -166,7 +196,7 @@ class CheckoutController extends Controller
             'company_name' => $request->company_name,
             'company_rut' => $request->company_rut,
             'company_giro' => $request->company_giro,
-            'shipping_address' => $request->shipping_address,
+            'shipping_address' => $finalShippingAddress,
             'shipping_city' => $communeName,
             'shipping_region' => $regionName,
             'shipping_notes' => $request->shipping_notes,

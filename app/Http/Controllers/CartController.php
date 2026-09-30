@@ -29,10 +29,13 @@ class CartController extends Controller
         }
 
         $tax = round($subtotal * 0.19); // 19% IVA standard Chile
-        $shipping = $subtotal > 150000 || empty($cart) ? 0 : 4990; // Free shipping over $150.000 CLP
+        $freeShippingEnabled = (bool) \App\Models\Setting::get('free_shipping_enabled', false);
+        $threshold = (float) \App\Models\Setting::get('free_shipping_threshold', 0);
+        $isFree = $freeShippingEnabled && $threshold > 0 && $subtotal >= $threshold;
+        $shipping = empty($cart) ? 0 : ($isFree ? 0 : 3067); // Estimated Blue Express rate
         $total = $subtotal + $shipping;
 
-        return view('pages.cart', compact('cart', 'subtotal', 'tax', 'shipping', 'total'));
+        return view('pages.cart', compact('cart', 'subtotal', 'tax', 'shipping', 'total', 'isFree'));
     }
 
     public function add(Request $request)
@@ -122,10 +125,12 @@ class CartController extends Controller
     protected function getDrawerPayload(array $cart, string $message = ''): array
     {
         $cartSubtotal = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cart));
-        $shipping = $cartSubtotal > 150000 || empty($cart) ? 0 : 4990;
+        $freeShippingEnabled = (bool) \App\Models\Setting::get('free_shipping_enabled', false);
+        $threshold = (float) \App\Models\Setting::get('free_shipping_threshold', 0);
+        $hasFreeShipping = $freeShippingEnabled && $threshold > 0 && $cartSubtotal >= $threshold;
+        $shipping = empty($cart) ? 0 : ($hasFreeShipping ? 0 : 3067);
         $total = $cartSubtotal + $shipping;
         $count = array_sum(array_column($cart, 'quantity'));
-        $threshold = 150000;
         $diff = max(0, $threshold - $cartSubtotal);
 
         return [
@@ -136,7 +141,8 @@ class CartController extends Controller
             'shipping' => $shipping === 0 ? 'GRATIS' : '$' . number_format($shipping, 0, ',', '.') . ' CLP',
             'cart_total' => '$' . number_format($total, 0, ',', '.') . ' CLP',
             'free_shipping_diff' => '$' . number_format($diff, 0, ',', '.') . ' CLP',
-            'has_free_shipping' => $cartSubtotal >= $threshold,
+            'has_free_shipping' => $hasFreeShipping,
+            'free_shipping_enabled' => $freeShippingEnabled && $threshold > 0,
             'is_empty' => empty($cart),
             'html' => view('partials.cart_drawer_items', compact('cart', 'cartSubtotal', 'total', 'shipping'))->render(),
         ];

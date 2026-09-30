@@ -410,25 +410,38 @@ class BlueExpressService
 
     /**
      * Quote shipping rate via Blue Express Pricing API
+     * Supports both 'domicilio' (PAQU) and 'pickup' (PUDO - Punto Blue Express)
      */
-    public function quoteShipping(string $regionCode, string $communeName, array $cart = [], float $subtotal = 0.0): array
+    public function quoteShipping(string $regionCode, string $communeName, array $cart = [], float $subtotal = 0.0, string $shippingType = 'domicilio'): array
     {
+        $shippingType = strtolower(trim($shippingType)) === 'pickup' ? 'pickup' : 'domicilio';
+        $familiaProducto = $shippingType === 'pickup' ? 'PUDO' : 'PAQU';
+        $defaultServiceName = $shippingType === 'pickup' ? 'Blue Express Punto Pick Up (Retiro en Punto Blue)' : 'Blue Express Express (A Domicilio)';
+
+        // Free shipping is only applied if explicitly enabled by admin in settings
+        $isFree = false;
         try {
-            $freeShippingThreshold = (float) Setting::get('free_shipping_threshold', 150000);
+            $freeShippingEnabled = (bool) Setting::get('free_shipping_enabled', false);
+            $freeShippingThreshold = (float) Setting::get('free_shipping_threshold', 0);
+            if ($freeShippingEnabled && $freeShippingThreshold > 0 && $subtotal >= $freeShippingThreshold) {
+                $isFree = true;
+            }
         } catch (\Throwable $e) {
-            $freeShippingThreshold = 150000.0;
+            $isFree = false;
         }
-        $isFree = $subtotal >= $freeShippingThreshold && $subtotal > 0;
 
         // Resolve destination district & region
         $geo = $this->resolveGeolocation($regionCode, $communeName);
         if (!$geo) {
+            $fallbackCost = $shippingType === 'pickup' ? 3490 : 4990;
             return [
                 'success' => true,
                 'is_fallback' => true,
                 'courier' => 'Blue Express',
-                'service_name' => 'Blue Express Terrestre (Estándar)',
-                'cost' => $isFree ? 0 : 4990,
+                'service_name' => $defaultServiceName,
+                'shipping_type' => $shippingType,
+                'cost' => $isFree ? 0 : $fallbackCost,
+                'real_cost' => $fallbackCost,
                 'promise_day' => 'Hasta 2 a 4 días hábiles',
                 'is_free' => $isFree,
             ];
@@ -442,7 +455,6 @@ class BlueExpressService
         foreach ($cart as $item) {
             $qty = (int) ($item['quantity'] ?? 1);
             $itemCount += $qty;
-            // Estimated 1.2kg per hardware item if not provided
             $itemWeight = (float) ($item['weight'] ?? 1.2);
             $totalWeight += $itemWeight * $qty;
         }
@@ -457,7 +469,7 @@ class BlueExpressService
             'cantidad'   => 1,
         ];
 
-        $cacheKey = 'bx_rate_' . md5($geo['districtCode'] . '_' . $geo['regionCode'] . '_' . $totalWeight . '_' . (int)$subtotal);
+        $cacheKey = 'bx_rate_' . md5($geo['districtCode'] . '_' . $geo['regionCode'] . '_' . $totalWeight . '_' . (int)$subtotal . '_' . $shippingType);
         $cachedQuote = Cache::get($cacheKey);
         if ($cachedQuote) {
             if ($isFree) {
@@ -481,7 +493,7 @@ class BlueExpressService
             'domain'      => 'https://inexus.cl/',
             'datosProducto' => [
                 'producto'        => 'P',
-                'familiaProducto' => 'PAQU',
+                'familiaProducto' => $familiaProducto,
                 'bultos'          => $bultos,
             ]
         ];
@@ -501,14 +513,18 @@ class BlueExpressService
 
                 if (!empty($data['total'])) {
                     $realCost = (int) round($data['total']);
-                    $promiseDay = $data['promiseDay'] ?? 'Hasta 2 días hábiles';
-                    $serviceName = $data['nameService'] ?? 'Blue Express Express';
+                    $promiseDay = $data['promiseDay'] ?? 'Hasta 2 a 3 días hábiles';
+                    $serviceName = $data['nameService'] ?? $defaultServiceName;
+                    if ($shippingType === 'pickup' && !str_contains(strtolower($serviceName), 'pick') && !str_contains(strtolower($serviceName), 'punto')) {
+                        $serviceName = 'Blue Express - Punto Pick Up';
+                    }
 
                     $quote = [
                         'success'      => true,
                         'is_fallback'  => false,
                         'courier'      => 'Blue Express',
                         'service_name' => $serviceName,
+                        'shipping_type'=> $shippingType,
                         'cost'         => $isFree ? 0 : $realCost,
                         'real_cost'    => $realCost,
                         'promise_day'  => $promiseDay,
@@ -528,18 +544,19 @@ class BlueExpressService
         // Sensible fallback based on zone
         $fallbackCost = 4990;
         if ($geo['regionCode'] === 13) {
-            $fallbackCost = 3490; // Santiago
+            $fallbackCost = $shippingType === 'pickup' ? 2490 : 3490; // Santiago
         } elseif (in_array($geo['regionCode'], [5, 6, 7])) {
-            $fallbackCost = 4490; // Central
+            $fallbackCost = $shippingType === 'pickup' ? 3490 : 4490; // Central
         } else {
-            $fallbackCost = 5990; // Regions
+            $fallbackCost = $shippingType === 'pickup' ? 4490 : 5990; // Regions
         }
 
         return [
             'success'      => true,
             'is_fallback'  => true,
             'courier'      => 'Blue Express',
-            'service_name' => 'Blue Express Terrestre',
+            'service_name' => $defaultServiceName,
+            'shipping_type'=> $shippingType,
             'cost'         => $isFree ? 0 : $fallbackCost,
             'real_cost'    => $fallbackCost,
             'promise_day'  => 'Hasta 2 a 3 días hábiles',

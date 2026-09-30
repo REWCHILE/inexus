@@ -112,9 +112,9 @@
                     </div>
 
                     <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:14.5px;">
-                        <span style="color:var(--text-muted);">Despacho Express:</span>
+                        <span style="color:var(--text-muted);">Despacho Blue Express:</span>
                         <span style="font-weight:700; color:{{ $shipping === 0 ? '#166534' : 'var(--navy-900)' }};">
-                            {{ $shipping === 0 ? 'GRATIS (Compras > $150.000)' : '$' . number_format($shipping, 0, ',', '.') . ' CLP' }}
+                            {{ $shipping === 0 ? 'GRATIS' : '$' . number_format($shipping, 0, ',', '.') . ' CLP' }}
                         </span>
                     </div>
 
