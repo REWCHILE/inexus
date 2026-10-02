@@ -42,9 +42,15 @@ class CatalogCrossEnricherService
         $name = trim((string) $product->name);
         $brand = trim((string) ($product->brand ?: ''));
 
-        // 1. Try querying Tech Catalog (api.solotodo.com & stores including Winpy)
         $data = null;
-        if (!empty($vpn)) {
+
+        // 1. Try Open Icecat API (official manufacturer high-res imagery, gallery, bullet points, specs)
+        if (!empty($brand) && !empty($vpn)) {
+            $data = $this->scraper->queryIcecat($brand, $vpn, $name);
+        }
+
+        // 2. Try querying Tech Catalog (api.solotodo.com & stores including Winpy)
+        if (empty($data['main_image']) && !empty($vpn)) {
             $data = $this->scraper->queryTechCatalog($vpn, $brand, $name);
         }
 
@@ -57,7 +63,24 @@ class CatalogCrossEnricherService
             $data = $this->scraper->queryTechCatalog($name, $brand, $name);
         }
 
-        // 2. Fallback to Winpy direct if still missing
+        // 3. Fallback to SPDigital
+        if (empty($data['main_image'])) {
+            $spData = $this->scraper->scrapeSpDigital($sku, $name);
+            if (!empty($spData['image_url'])) {
+                $data = [
+                    'source' => 'spdigital',
+                    'title' => null,
+                    'brand' => $brand,
+                    'short_description' => null,
+                    'description' => $spData['description'] ?? null,
+                    'main_image' => $spData['image_url'],
+                    'gallery' => [],
+                    'specifications' => [],
+                ];
+            }
+        }
+
+        // 4. Fallback to Winpy direct if still missing
         if (empty($data['main_image'])) {
             $searchKey = !empty($vpn) ? $vpn : (!empty($sku) ? $sku : $name);
             $winpyData = $this->scraper->scrapeWinpy($searchKey, $name);
@@ -77,7 +100,7 @@ class CatalogCrossEnricherService
             }
         }
 
-        // 3. Fallback to MercadoLibre Chile
+        // 5. Fallback to MercadoLibre Chile
         if (empty($data['main_image'])) {
             $searchKey = !empty($vpn) ? $vpn : (!empty($sku) ? $sku : $name);
             $ml = $this->scraper->scrapeMercadoLibre($searchKey, $name);

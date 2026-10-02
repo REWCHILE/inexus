@@ -287,18 +287,139 @@ class ScraperService
     }
 
     /**
+     * Query Open Icecat API for manufacturer high-res imagery, gallery, bullet points, and official specs
+     */
+    public function queryIcecat(string $brand, string $vpn, string $name = ''): ?array
+    {
+        if (empty($brand) || empty($vpn)) {
+            return null;
+        }
+
+        $cleanVpn = explode('#', $vpn)[0];
+        $cleanVpn = explode('/', $cleanVpn)[0];
+        $cleanVpn = trim($cleanVpn);
+
+        if (strlen($cleanVpn) < 2) {
+            return null;
+        }
+
+        // Clean brand name (remove Inc, Corp, Technologies, Pty, etc.)
+        $cleanBrand = preg_replace('/(\s+(inc|corporation|technologies|systems|pty|ltd|co|llc|spa)\b.*)/i', '', trim($brand));
+        $cleanBrand = trim($cleanBrand);
+
+        $url = "https://live.icecat.biz/api/?UserName=openIcecat-live&Language=es&Brand=" . urlencode($cleanBrand) . "&ProductCode=" . urlencode($cleanVpn);
+
+        try {
+            $response = Http::timeout(8)
+                ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'])
+                ->get($url);
+
+            if ($response->successful()) {
+                $json = $response->json();
+                $data = $json['data'] ?? [];
+
+                if (empty($data)) {
+                    return null;
+                }
+
+                $imageObj = $data['Image'] ?? [];
+                $mainImage = $imageObj['HighPic'] ?? ($imageObj['Pic500x500'] ?? ($imageObj['LowPic'] ?? null));
+
+                if (!$mainImage) {
+                    return null;
+                }
+
+                // Gallery
+                $gallery = [];
+                if (!empty($data['Gallery']) && is_array($data['Gallery'])) {
+                    foreach ($data['Gallery'] as $g) {
+                        $pic = $g['Pic'] ?? ($g['Pic500x500'] ?? ($g['LowPic'] ?? null));
+                        if ($pic && !in_array($pic, $gallery) && count($gallery) < 8) {
+                            $gallery[] = $pic;
+                        }
+                    }
+                }
+
+                // Title & descriptions
+                $general = $data['GeneralInfo'] ?? [];
+                $title = $general['Title'] ?? null;
+                $summary = $general['SummaryDescription'] ?? [];
+                $shortDesc = $summary['ShortSummaryDescription'] ?? null;
+                $longDesc = $summary['LongSummaryDescription'] ?? null;
+
+                // Bullet points
+                $bullets = [];
+                if (!empty($data['BulletPoints']['Values']) && is_array($data['BulletPoints']['Values'])) {
+                    $bullets = $data['BulletPoints']['Values'];
+                }
+
+                $descriptionHtml = null;
+                if ($longDesc || !empty($bullets)) {
+                    $html = '';
+                    if ($longDesc) {
+                        $html .= "<p>{$longDesc}</p>";
+                    }
+                    if (!empty($bullets)) {
+                        $html .= "<ul>";
+                        foreach ($bullets as $b) {
+                            $html .= "<li>" . e($b) . "</li>";
+                        }
+                        $html .= "</ul>";
+                    }
+                    $descriptionHtml = $html;
+                }
+
+                // Technical specifications from FeaturesGroups
+                $specs = [];
+                if (!empty($data['FeaturesGroups']) && is_array($data['FeaturesGroups'])) {
+                    foreach ($data['FeaturesGroups'] as $fg) {
+                        $groupName = $fg['FeatureGroup']['Name']['Value'] ?? '';
+                        if (!empty($fg['Features']) && is_array($fg['Features'])) {
+                            foreach ($fg['Features'] as $f) {
+                                $featName = $f['Feature']['Name']['Value'] ?? '';
+                                $featVal = $f['PresentationValue'] ?? ($f['Value'] ?? '');
+                                if ($featName && $featVal && count($specs) < 24) {
+                                    $specs[$featName] = (string) $featVal;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return [
+                    'source' => 'icecat',
+                    'title' => $title,
+                    'brand' => $general['Brand'] ?? $brand,
+                    'short_description' => $shortDesc,
+                    'description' => $descriptionHtml,
+                    'main_image' => $mainImage,
+                    'gallery' => $gallery,
+                    'specifications' => $specs,
+                ];
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Icecat query error for {$brand} {$cleanVpn}: " . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
      * Query Chilean Hardware/Tech Catalog (api.solotodo.com) for real-time enrichments
      */
     public function queryTechCatalog(string $identifier, string $brand = '', string $name = ''): ?array
     {
         $searchTerms = [];
-        $cleanVpn = trim(str_replace(['/', '-', '_'], ' ', $identifier));
-        if (!empty($identifier)) {
+        $cleanVpn = explode('#', $identifier)[0];
+        $cleanVpn = explode('/', $cleanVpn)[0];
+        $cleanVpn = trim($cleanVpn);
+
+        if (!empty($cleanVpn)) {
+            $searchTerms[] = $cleanVpn;
+            $searchTerms[] = str_replace(['-', '_'], ' ', $cleanVpn);
+        }
+        if (!empty($identifier) && $identifier !== $cleanVpn) {
             $searchTerms[] = $identifier;
-            if (Str::contains($identifier, '/')) {
-                $searchTerms[] = str_replace('/', '', $identifier);
-                $searchTerms[] = explode('/', $identifier)[0];
-            }
         }
         if (!empty($name)) {
             $cleanName = preg_replace('/[^a-zA-Z0-9\s]/', ' ', $name);
@@ -456,9 +577,26 @@ class ScraperService
         $name = trim((string) $product->name);
         $brand = trim((string) ($product->brand ?: ''));
 
-        // 1. Try Chilean Hardware/Tech Catalog (Winpy / SoloTodo API)
+        // 1. Try Open Icecat API (official manufacturer high-res imagery, gallery & specs)
         $result = null;
-        if (!empty($vpn)) {
+        if (!empty($brand) && !empty($vpn)) {
+            $icecatData = $this->queryIcecat($brand, $vpn, $name);
+            if (!empty($icecatData['main_image'])) {
+                $result = [
+                    'source' => $icecatData['source'],
+                    'product_url' => null,
+                    'image_url' => $icecatData['main_image'],
+                    'gallery' => $icecatData['gallery'] ?? [],
+                    'description' => $icecatData['description'] ?? null,
+                    'short_description' => $icecatData['short_description'] ?? null,
+                    'specifications' => $icecatData['specifications'] ?? [],
+                    'title' => $icecatData['title'] ?? null,
+                ];
+            }
+        }
+
+        // 2. Try Chilean Hardware/Tech Catalog (SoloTodo / Winpy API)
+        if (empty($result['image_url']) && !empty($vpn)) {
             $catData = $this->queryTechCatalog($vpn, $brand, $name);
             if (!empty($catData['main_image'])) {
                 $result = [
@@ -474,12 +612,30 @@ class ScraperService
             }
         }
 
-        // 2. Try SPDigital
+        // 3. Try SoloTodo with cleaned SKU or Name
+        if (empty($result['image_url']) && !empty($sku)) {
+            $cleanSku = preg_replace('/^(IM-|KNG-|LEN-|HP-|ASUS-)/', '', $sku);
+            $catData = $this->queryTechCatalog($cleanSku, $brand, $name);
+            if (!empty($catData['main_image'])) {
+                $result = [
+                    'source' => $catData['source'],
+                    'product_url' => $catData['winpy_url'] ?? null,
+                    'image_url' => $catData['main_image'],
+                    'gallery' => $catData['gallery'] ?? [],
+                    'description' => $catData['description'] ?? null,
+                    'short_description' => $catData['short_description'] ?? null,
+                    'specifications' => $catData['specifications'] ?? [],
+                    'title' => $catData['title'] ?? null,
+                ];
+            }
+        }
+
+        // 4. Try SPDigital
         if (empty($result['image_url'])) {
             $result = $this->scrapeSpDigital($sku, $name);
         }
 
-        // 3. Fallback to MercadoLibre
+        // 5. Fallback to MercadoLibre
         if (empty($result['image_url'])) {
             $mlResult = $this->scrapeMercadoLibre($sku, $name);
             if (!empty($mlResult['image_url'])) {

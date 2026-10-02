@@ -56,15 +56,52 @@ class AdminScraperController extends Controller
         if (\Illuminate\Support\Str::startsWith($sku, ['http://', 'https://']) || \Illuminate\Support\Str::contains($sku, ['winpy.cl', 'solotodo.cl'])) {
             $result = $this->scraper->scrapeUrl($sku);
         } else {
-            if ($source === 'winpy' || $source === 'all') {
+            // 1. Try Icecat
+            if ($source === 'icecat' || $source === 'all') {
+                $icecatRes = $this->scraper->queryIcecat($request->get('brand', 'hp'), $sku, $name);
+                if (!empty($icecatRes['main_image'])) {
+                    $result = [
+                        'source' => 'icecat',
+                        'product_url' => null,
+                        'image_url' => $icecatRes['main_image'],
+                        'title' => $icecatRes['title'] ?? null,
+                        'brand' => $icecatRes['brand'] ?? null,
+                        'description' => $icecatRes['description'] ?? null,
+                        'specifications' => $icecatRes['specifications'] ?? [],
+                    ];
+                }
+            }
+
+            // 2. Try SoloTodo
+            if (empty($result['image_url']) && ($source === 'solotodo' || $source === 'all')) {
+                $st = $this->scraper->queryTechCatalog($sku, $request->get('brand', ''), $name);
+                if (!empty($st['main_image'])) {
+                    $result = [
+                        'source' => 'solotodo',
+                        'product_url' => $st['winpy_url'] ?? null,
+                        'image_url' => $st['main_image'],
+                        'title' => $st['title'] ?? null,
+                        'brand' => $st['brand'] ?? null,
+                        'description' => $st['description'] ?? null,
+                        'specifications' => $st['specifications'] ?? [],
+                        'transfer_price' => $st['market_offer_price'] ?? null,
+                        'normal_price' => $st['market_normal_price'] ?? null,
+                    ];
+                }
+            }
+
+            // 3. Try Winpy
+            if (empty($result['image_url']) && ($source === 'winpy' || $source === 'all')) {
                 $result = $this->scraper->scrapeWinpy($sku, $name);
             }
 
-            if ((empty($result['image_url'])) && ($source === 'spdigital' || $source === 'all')) {
+            // 4. Try SPDigital
+            if (empty($result['image_url']) && ($source === 'spdigital' || $source === 'all')) {
                 $result = $this->scraper->scrapeSpDigital($sku, $name);
             }
 
-            if ((empty($result['image_url'])) && ($source === 'mercadolibre' || $source === 'all')) {
+            // 5. Try MercadoLibre
+            if (empty($result['image_url']) && ($source === 'mercadolibre' || $source === 'all')) {
                 $ml = $this->scraper->scrapeMercadoLibre($sku, $name);
                 if (!empty($ml['image_url'])) {
                     $result = $ml;
@@ -89,7 +126,7 @@ class AdminScraperController extends Controller
 
     public function runBatch(Request $request)
     {
-        $limit = max(1, min(50, (int) $request->get('limit', 10)));
+        $limit = max(1, min(500, (int) $request->get('limit', 10)));
         $result = $this->scraper->batchScrape($limit);
 
         return response()->json([
@@ -101,7 +138,7 @@ class AdminScraperController extends Controller
 
     public function crossMatch(Request $request)
     {
-        $limit = max(1, min(50, (int) $request->get('limit', 15)));
+        $limit = max(1, min(500, (int) $request->get('limit', 15)));
         $force = $request->boolean('force', false);
         $result = $this->enricher->enrichBatch($limit, $force);
 

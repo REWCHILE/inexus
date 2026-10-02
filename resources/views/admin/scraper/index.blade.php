@@ -43,8 +43,8 @@
         <div class="metric-card">
             <div>
                 <div class="metric-title">Canales Activos</div>
-                <div class="metric-value" style="font-size:18px; color:var(--primary);">Winpy + SPDigital + ML</div>
-                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Camuflaje de User-Agents</div>
+                <div class="metric-value" style="font-size:18px; color:var(--primary);">Icecat + SoloTodo + Winpy</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Fotos HD oficiales & Fichas técnicas</div>
             </div>
             <div style="width:44px; height:44px; border-radius:10px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center;">
                 🌐
@@ -57,16 +57,18 @@
         
         <!-- Live Single SKU Scraper Tester -->
         <div class="checkout-card" style="margin:0;">
-            <h3 style="font-size:17px; margin-bottom:6px;">Prueba de Scraping en Vivo (Enlace o SKU)</h3>
+            <h3 style="font-size:17px; margin-bottom:6px;">Prueba de Scraping en Vivo (Enlace o SKU / N° Parte)</h3>
             <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
-                Pega directamente una URL de producto (<strong>Winpy</strong>, SPDigital, MercadoLibre) o ingresa un SKU/código de fabricante para rastrear en vivo.
+                Pega directamente un N° de Parte (VPN), SKU, URL de producto (<strong>Icecat, SoloTodo, Winpy</strong>, SPDigital, ML) para rastrear en vivo.
             </p>
 
             <div style="display:flex; gap:10px; margin-bottom:16px;">
-                <input type="text" id="live-sku-input" placeholder="Ej: https://www.winpy.cl/venta/... o SKC3000S/1024G" class="form-control" style="flex:1;">
-                <select id="live-source-select" class="form-control" style="max-width:160px;">
+                <input type="text" id="live-sku-input" placeholder="Ej: 7Y8H0AA, SKC3000S/1024G o https://..." class="form-control" style="flex:1;">
+                <select id="live-source-select" class="form-control" style="max-width:180px;">
                     <option value="all">Todos los Canales</option>
-                    <option value="winpy" selected>Winpy Chile</option>
+                    <option value="icecat">Open Icecat (Oficial)</option>
+                    <option value="solotodo">SoloTodo Chile</option>
+                    <option value="winpy">Winpy Chile</option>
                     <option value="spdigital">SPDigital Chile</option>
                     <option value="mercadolibre">Mercado Libre</option>
                 </select>
@@ -81,17 +83,19 @@
 
         <!-- Batch Scraper & Ingram Cross-Enricher Runner -->
         <div class="checkout-card" style="margin:0;">
-            <h3 style="font-size:17px; margin-bottom:6px;">Cruce Masivo: Ingram Micro + Scraper</h3>
+            <h3 style="font-size:17px; margin-bottom:6px;">Cruce Masivo: Catálogo + Scraper</h3>
             <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
-                Cruza automáticamente los productos de Ingram con fichas técnicas completas, galerías de fotos y precios de mercado (Winpy / SoloTodo).
+                Cruza automáticamente los productos de la tienda con fotos HD oficiales, fichas técnicas completas, galerías y especificaciones (Icecat / SoloTodo / Winpy).
             </p>
 
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
                 <label for="batch-limit" style="font-size:13px; font-weight:600;">Lote:</label>
-                <select id="batch-limit" class="form-control" style="max-width:130px;">
-                    <option value="5">5 productos</option>
-                    <option value="15" selected>15 productos</option>
-                    <option value="30">30 productos</option>
+                <select id="batch-limit" class="form-control" style="max-width:140px;">
+                    <option value="15">15 productos</option>
+                    <option value="50" selected>50 productos</option>
+                    <option value="100">100 productos</option>
+                    <option value="250">250 productos</option>
+                    <option value="500">500 productos</option>
                 </select>
                 <button type="button" id="btn-run-cross-match" class="btn btn-primary" style="flex:1;">
                     Iniciar Cruce Automático
