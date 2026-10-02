@@ -117,7 +117,7 @@ class BulkEnrichImagesCommand extends Command
                 $res = $icecatResponses[$pid] ?? null;
                 $icecatMatched = false;
 
-                if ($res && $res->successful()) {
+                if ($res instanceof \Illuminate\Http\Client\Response && $res->successful()) {
                     $json = $res->json();
                     $data = $json['data'] ?? [];
                     $imgObj = $data['Image'] ?? [];
@@ -221,7 +221,7 @@ class BulkEnrichImagesCommand extends Command
                     $stRes = $solotodoResponses[$pid] ?? null;
                     $stMatched = false;
 
-                    if ($stRes && $stRes->successful()) {
+                    if ($stRes instanceof \Illuminate\Http\Client\Response && $stRes->successful()) {
                         $json = $stRes->json();
                         $entry = $json['results'][0]['product_entries'][0] ?? null;
                         if ($entry && !empty($entry['product']['picture_url'])) {
