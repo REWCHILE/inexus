@@ -37,7 +37,7 @@
                 </div>
                 <div>
                     <span style="color:var(--text-muted); display:block;">Medio de Pago:</span>
-                    <strong>{{ strtoupper($order->payment_method) }}</strong>
+                    <strong>{{ $order->payment_method_name }}</strong>
                     @if($order->payment_id)
                         <div style="font-size:11.5px; color:var(--text-light); font-family:monospace;">ID: {{ $order->payment_id }}</div>
                     @endif

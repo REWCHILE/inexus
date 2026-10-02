@@ -6,19 +6,26 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\BlueExpressService;
+use App\Services\FlowService;
 use App\Services\MercadoPagoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
     protected MercadoPagoService $mercadoPago;
     protected BlueExpressService $blueExpress;
+    protected FlowService $flow;
 
-    public function __construct(MercadoPagoService $mercadoPago, BlueExpressService $blueExpress)
-    {
+    public function __construct(
+        MercadoPagoService $mercadoPago,
+        BlueExpressService $blueExpress,
+        FlowService $flow
+    ) {
         $this->mercadoPago = $mercadoPago;
         $this->blueExpress = $blueExpress;
+        $this->flow = $flow;
     }
 
     public function index()
@@ -134,7 +141,7 @@ class CheckoutController extends Controller
             'shipping_city' => 'required|string|max:100',
             'shipping_region_code' => 'nullable|string|max:10',
             'shipping_region' => 'nullable|string|max:100',
-            'payment_method' => 'required|in:mercadopago,transferencia',
+            'payment_method' => 'required|in:mercadopago,flow,transferencia',
         ]);
 
         $customerName = trim(($request->customer_first_name ?? '') . ' ' . ($request->customer_last_name ?? ''));
@@ -233,6 +240,11 @@ class CheckoutController extends Controller
             if (!empty($preference['init_point'])) {
                 return redirect()->away($preference['init_point']);
             }
+        } elseif ($request->payment_method === 'flow') {
+            $flowPayment = $this->flow->createPayment($order);
+            if (!empty($flowPayment['redirect_url'])) {
+                return redirect()->away($flowPayment['redirect_url']);
+            }
         }
 
         // If transferencia or fallback
@@ -297,5 +309,141 @@ class CheckoutController extends Controller
 
         return redirect()->route('order.confirmation', $order->order_number)
             ->with('error', 'El pago fue rechazado. Puedes reintentar con otro medio de pago.');
+    }
+
+    /**
+     * Flow Sandbox Simulation Page
+     */
+    public function simulateFlow(string $orderNumber)
+    {
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
+        return view('pages.simulate_flow', compact('order'));
+    }
+
+    /**
+     * Complete Flow Simulated Sandbox Payment
+     */
+    public function completeSimulatedFlow(Request $request, string $orderNumber)
+    {
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
+        $status = $request->input('simulation_status', 'approved');
+
+        if ($status === 'rejected') {
+            $order->payment_status = 'rejected';
+            $order->save();
+
+            return redirect()->route('checkout.failure', $order->order_number)
+                ->with('error', 'El pago fue cancelado o rechazado en la pasarela Flow.');
+        }
+
+        $order->payment_status = 'approved';
+        $order->payment_id = 'FLOW-' . rand(1000000, 9999999);
+        $order->status = 'processing';
+        $order->save();
+
+        return redirect()->route('order.confirmation', $order->order_number)
+            ->with('success', '¡Pago procesado exitosamente a través de Flow (Webpay Plus / Multibanco)!');
+    }
+
+    /**
+     * Flow Customer Return URL (Flow redirects user browser here)
+     */
+    public function flowReturn(Request $request)
+    {
+        $token = $request->input('token');
+
+        if (empty($token)) {
+            Log::warning('Flow Return called without token.');
+            return redirect()->route('shop.index')
+                ->with('warning', 'No se recibió comprobante de pago de Flow.');
+        }
+
+        $result = $this->flow->getPaymentStatus($token);
+
+        if (!$result['success'] || empty($result['data'])) {
+            Log::error('Flow Return: Failed to get payment status for token: ' . $token);
+            return redirect()->route('shop.index')
+                ->with('error', 'No fue posible validar el estado del pago con Flow.');
+        }
+
+        $data = $result['data'];
+        $commerceOrder = $data['commerceOrder'] ?? null;
+        $order = Order::where('order_number', $commerceOrder)->first();
+
+        if (!$order) {
+            Log::error('Flow Return: Order not found for commerceOrder: ' . $commerceOrder);
+            return redirect()->route('shop.index')
+                ->with('error', 'Orden no encontrada en nuestro sistema.');
+        }
+
+        // Flow Status: 1 = Pendiente, 2 = Pagada, 3 = Rechazada, 4 = Anulada
+        $status = (int) ($data['status'] ?? 0);
+        $flowOrder = $data['flowOrder'] ?? $token;
+
+        if ($status === 2) {
+            $order->payment_status = 'approved';
+            $order->payment_id = 'FLOW-' . $flowOrder;
+            $order->status = 'processing';
+            $order->save();
+
+            return redirect()->route('order.confirmation', $order->order_number)
+                ->with('success', '¡Pago procesado exitosamente a través de Flow!');
+        } elseif ($status === 1) {
+            $order->payment_status = 'pending';
+            $order->payment_id = 'FLOW-' . $flowOrder;
+            $order->save();
+
+            return redirect()->route('order.confirmation', $order->order_number)
+                ->with('warning', 'Tu pago se encuentra en proceso de validación por Flow.');
+        } else {
+            $order->payment_status = 'rejected';
+            $order->save();
+
+            return redirect()->route('checkout.failure', $order->order_number)
+                ->with('error', 'El pago fue rechazado o anulado en la plataforma de Flow.');
+        }
+    }
+
+    /**
+     * Flow Server-to-Server Confirmation Webhook
+     */
+    public function flowConfirm(Request $request)
+    {
+        $token = $request->input('token');
+
+        if (empty($token)) {
+            Log::warning('Flow Confirm webhook called without token.');
+            return response('Token missing', 400);
+        }
+
+        $result = $this->flow->getPaymentStatus($token);
+
+        if (!$result['success'] || empty($result['data'])) {
+            Log::error('Flow Confirm Webhook: Failed to verify payment for token: ' . $token);
+            return response('Payment verification failed', 500);
+        }
+
+        $data = $result['data'];
+        $commerceOrder = $data['commerceOrder'] ?? null;
+        $order = Order::where('order_number', $commerceOrder)->first();
+
+        if ($order) {
+            $status = (int) ($data['status'] ?? 0);
+            $flowOrder = $data['flowOrder'] ?? $token;
+
+            if ($status === 2) {
+                $order->payment_status = 'approved';
+                $order->payment_id = 'FLOW-' . $flowOrder;
+                $order->status = 'processing';
+                $order->save();
+                Log::info("Flow Webhook: Order {$order->order_number} marked as approved.");
+            } elseif ($status === 3 || $status === 4) {
+                $order->payment_status = 'rejected';
+                $order->save();
+                Log::info("Flow Webhook: Order {$order->order_number} marked as rejected.");
+            }
+        }
+
+        return response('OK', 200);
     }
 }

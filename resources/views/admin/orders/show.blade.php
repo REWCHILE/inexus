@@ -140,7 +140,7 @@
                 </form>
 
                 <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color); font-size:12.5px; color:var(--text-muted);">
-                    <div><strong>Medio de Pago:</strong> {{ strtoupper($order->payment_method) }}</div>
+                    <div><strong>Medio de Pago:</strong> {{ $order->payment_method_name }}</div>
                     @if($order->payment_id)
                         <div style="margin-top:4px;"><strong>ID Transacción:</strong> <code>{{ $order->payment_id }}</code></div>
                     @endif

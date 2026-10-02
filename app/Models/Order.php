@@ -74,4 +74,14 @@ class Order extends Model
             default => '<span class="badge bg-warning text-dark">Pendiente</span>',
         };
     }
+
+    public function getPaymentMethodNameAttribute(): string
+    {
+        return match ($this->payment_method) {
+            'flow' => 'Flow Chile (Webpay / Tarjetas)',
+            'mercadopago' => 'Mercado Pago',
+            'transferencia' => 'Transferencia Bancaria Directa',
+            default => strtoupper((string) $this->payment_method),
+        };
+    }
 }

@@ -123,6 +123,17 @@
                     </a>
                 </li>
 
+                <li>
+                    <a href="{{ route('admin.payments.index') }}" class="admin-sidebar-link {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <span>Pasarelas de Pago</span>
+                        <span class="badge" style="background:#0957c3; color:#fff; font-size:10px; margin-left:auto;">Flow.cl</span>
+                    </a>
+                </li>
+
                 <li style="margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08);">
                     <a href="{{ route('home') }}" target="_blank" class="admin-sidebar-link">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

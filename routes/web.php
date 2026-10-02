@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminIngramController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminPaymentController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminScraperController;
 use App\Http\Controllers\CartController;
@@ -45,6 +46,12 @@ Route::get('/checkout/exito/{order_number}', [CheckoutController::class, 'succes
 Route::get('/checkout/pendiente/{order_number}', [CheckoutController::class, 'pending'])->name('checkout.pending');
 Route::get('/checkout/fallo/{order_number}', [CheckoutController::class, 'failure'])->name('checkout.failure');
 Route::get('/pedido/{order_number}', [CheckoutController::class, 'confirmation'])->name('order.confirmation');
+
+// Flow Payments (flow.cl)
+Route::match(['get', 'post'], '/checkout/flow/retorno', [CheckoutController::class, 'flowReturn'])->name('checkout.flow.return');
+Route::post('/checkout/flow/confirmacion', [CheckoutController::class, 'flowConfirm'])->name('checkout.flow.confirm');
+Route::get('/checkout/flow/simular/{order_number}', [CheckoutController::class, 'simulateFlow'])->name('checkout.simulate_flow');
+Route::post('/checkout/flow/simular/{order_number}', [CheckoutController::class, 'completeSimulatedFlow'])->name('checkout.simulate_flow.complete');
 
 // Static & Legal Pages
 Route::get('/nosotros', [PageController::class, 'about'])->name('page.about');
@@ -108,4 +115,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/pedidos', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/pedidos/{id}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::put('/pedidos/{id}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+
+    // Payment Gateways (Flow, Mercado Pago, etc.)
+    Route::get('/pagos', [AdminPaymentController::class, 'index'])->name('payments.index');
+    Route::post('/pagos', [AdminPaymentController::class, 'update'])->name('payments.update');
+    Route::post('/pagos/test-flow', [AdminPaymentController::class, 'testFlow'])->name('payments.test_flow');
 });

@@ -87,7 +87,7 @@
                                     </div>
                                     <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:10px; font-size:13px;">
                                         <span style="color:#64748b;">
-                                            Pago: {{ $order->payment_method === 'transfer' ? 'Transferencia Bancaria' : 'Tarjeta / MercadoPago' }}
+                                            Pago: {{ $order->payment_method_name }}
                                         </span>
                                         <strong style="color:var(--navy-900); font-size:15px;">
                                             $ {{ number_format($order->total_clp, 0, ',', '.') }} CLP
