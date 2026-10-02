@@ -42,13 +42,10 @@
     <div class="tabs-container" style="margin-top:0;">
         <div class="tabs-header">
             <button type="button" class="tab-btn active" data-target="tab-flow">
-                ⚡ 1. Pasarela Flow Chile (Recomendado)
-            </button>
-            <button type="button" class="tab-btn" data-target="tab-mercadopago">
-                💳 2. Mercado Pago
+                ⚡ 1. Pasarela Flow Chile (Webpay Plus / Multibanco)
             </button>
             <button type="button" class="tab-btn" data-target="tab-transfer">
-                🏦 3. Transferencia Bancaria
+                🏦 2. Transferencia Bancaria Directa
             </button>
         </div>
 
@@ -123,48 +120,7 @@
                 </div>
             </div>
 
-            <!-- TAB 2: Mercado Pago -->
-            <div class="tab-pane" id="tab-mercadopago" style="display:none;">
-                <div class="checkout-card">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; border-bottom:1px solid var(--border-color); padding-bottom:14px;">
-                        <div>
-                            <h3 style="font-size:18px; margin:0 0 4px; color:var(--navy-900);">Configuración Mercado Pago Chile</h3>
-                            <p style="font-size:13px; color:var(--text-muted); margin:0;">
-                                Cobro mediante Checkout Pro de Mercado Pago.
-                            </p>
-                        </div>
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; font-size:14px;">
-                            <input type="checkbox" name="mercadopago_active" value="1" {{ ($settings['mercadopago_active'] ?? true) ? 'checked' : '' }} style="accent-color:var(--primary); width:18px; height:18px;">
-                            Habilitar Mercado Pago en Checkout
-                        </label>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="mercadopago_public_key">Public Key</label>
-                            <input type="text" id="mercadopago_public_key" name="mercadopago_public_key" class="form-control"
-                                   value="{{ old('mercadopago_public_key', $settings['mercadopago_public_key'] ?? '') }}"
-                                   placeholder="APP_USR-..." style="font-family:monospace;">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="mercadopago_access_token">Access Token</label>
-                            <input type="password" id="mercadopago_access_token" name="mercadopago_access_token" class="form-control"
-                                   value="{{ old('mercadopago_access_token', $settings['mercadopago_access_token'] ?? '') }}"
-                                   placeholder="••••••••••••••••••••••••••••••••" style="font-family:monospace;">
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top:16px;">
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
-                            <input type="checkbox" name="mercadopago_sandbox" value="1" {{ ($settings['mercadopago_sandbox'] ?? true) ? 'checked' : '' }} style="accent-color:var(--primary); width:16px; height:16px;">
-                            <span>Modo Sandbox de Mercado Pago</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 3: Transferencia Bancaria -->
+            <!-- TAB 2: Transferencia Bancaria -->
             <div class="tab-pane" id="tab-transfer" style="display:none;">
                 <div class="checkout-card">
                     <h3 style="font-size:18px; margin-bottom:18px; color:var(--navy-900);">Transferencia Bancaria Directa</h3>

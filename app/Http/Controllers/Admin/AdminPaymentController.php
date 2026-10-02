@@ -37,15 +37,6 @@ class AdminPaymentController extends Controller
         Setting::set('flow_sandbox', $request->has('flow_sandbox'), 'boolean', 'store');
         Setting::set('flow_active', $request->has('flow_active'), 'boolean', 'store');
 
-        if ($request->has('mercadopago_public_key')) {
-            Setting::set('mercadopago_public_key', trim((string) $request->input('mercadopago_public_key', '')), 'text', 'store');
-        }
-        if ($request->has('mercadopago_access_token')) {
-            Setting::set('mercadopago_access_token', trim((string) $request->input('mercadopago_access_token', '')), 'text', 'store');
-        }
-        Setting::set('mercadopago_sandbox', $request->has('mercadopago_sandbox'), 'boolean', 'store');
-        Setting::set('mercadopago_active', $request->has('mercadopago_active'), 'boolean', 'store');
-
         if ($request->filled('transfer_discount_percentage')) {
             Setting::set('transfer_discount_percentage', (float) $request->input('transfer_discount_percentage'), 'float', 'store');
         }

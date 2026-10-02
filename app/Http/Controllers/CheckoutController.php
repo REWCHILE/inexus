@@ -7,23 +7,19 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\BlueExpressService;
 use App\Services\FlowService;
-use App\Services\MercadoPagoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
-    protected MercadoPagoService $mercadoPago;
     protected BlueExpressService $blueExpress;
     protected FlowService $flow;
 
     public function __construct(
-        MercadoPagoService $mercadoPago,
         BlueExpressService $blueExpress,
         FlowService $flow
     ) {
-        $this->mercadoPago = $mercadoPago;
         $this->blueExpress = $blueExpress;
         $this->flow = $flow;
     }
@@ -84,7 +80,7 @@ class CheckoutController extends Controller
 
         $regionCode = $request->input('region_code', 'CL-RM');
         $communeName = $request->input('commune_name', 'Santiago');
-        $paymentMethod = $request->input('payment_method', 'mercadopago');
+        $paymentMethod = $request->input('payment_method', 'flow');
         $shippingType = $request->input('shipping_type', 'domicilio');
 
         $quote = $this->blueExpress->quoteShipping($regionCode, $communeName, $cart, $subtotal, $shippingType);
@@ -141,7 +137,7 @@ class CheckoutController extends Controller
             'shipping_city' => 'required|string|max:100',
             'shipping_region_code' => 'nullable|string|max:10',
             'shipping_region' => 'nullable|string|max:100',
-            'payment_method' => 'required|in:mercadopago,flow,transferencia',
+            'payment_method' => 'required|in:flow,transferencia',
         ]);
 
         $customerName = trim(($request->customer_first_name ?? '') . ' ' . ($request->customer_last_name ?? ''));
@@ -235,12 +231,7 @@ class CheckoutController extends Controller
         // Clear cart from session
         session()->forget('cart');
 
-        if ($request->payment_method === 'mercadopago') {
-            $preference = $this->mercadoPago->createPreference($order);
-            if (!empty($preference['init_point'])) {
-                return redirect()->away($preference['init_point']);
-            }
-        } elseif ($request->payment_method === 'flow') {
+        if ($request->payment_method === 'flow') {
             $flowPayment = $this->flow->createPayment($order);
             if (!empty($flowPayment['redirect_url'])) {
                 return redirect()->away($flowPayment['redirect_url']);
@@ -250,24 +241,6 @@ class CheckoutController extends Controller
         // If transferencia or fallback
         return redirect()->route('order.confirmation', $order->order_number)
             ->with('success', '¡Pedido registrado con éxito!');
-    }
-
-    public function simulateMp(string $orderNumber)
-    {
-        $order = Order::where('order_number', $orderNumber)->firstOrFail();
-        return view('pages.simulate_mp', compact('order'));
-    }
-
-    public function completeSimulatedMp(Request $request, string $orderNumber)
-    {
-        $order = Order::where('order_number', $orderNumber)->firstOrFail();
-        $order->payment_status = 'approved';
-        $order->payment_id = 'MP-' . rand(100000000, 999999999);
-        $order->status = 'processing';
-        $order->save();
-
-        return redirect()->route('order.confirmation', $order->order_number)
-            ->with('success', '¡Pago procesado exitosamente por Mercado Pago!');
     }
 
     public function confirmation(string $orderNumber)

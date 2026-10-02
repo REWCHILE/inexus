@@ -40,8 +40,6 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.in
 Route::post('/checkout/quote-shipping', [CheckoutController::class, 'quoteShipping'])->name('checkout.quote_shipping');
 Route::get('/checkout/communes/{regionCode}', [CheckoutController::class, 'getCommunes'])->name('checkout.communes');
 Route::post('/checkout/procesar', [CheckoutController::class, 'process'])->name('checkout.process');
-Route::get('/checkout/simular/{order_number}', [CheckoutController::class, 'simulateMp'])->name('checkout.simulate_mp');
-Route::post('/checkout/simular/{order_number}', [CheckoutController::class, 'completeSimulatedMp'])->name('checkout.simulate_mp.complete');
 Route::get('/checkout/exito/{order_number}', [CheckoutController::class, 'success'])->name('checkout.success');
 Route::get('/checkout/pendiente/{order_number}', [CheckoutController::class, 'pending'])->name('checkout.pending');
 Route::get('/checkout/fallo/{order_number}', [CheckoutController::class, 'failure'])->name('checkout.failure');

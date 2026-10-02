@@ -14,9 +14,6 @@ class OrderTest extends TestCase
         $order->payment_method = 'flow';
         $this->assertEquals('Flow Chile (Webpay / Tarjetas)', $order->payment_method_name);
 
-        $order->payment_method = 'mercadopago';
-        $this->assertEquals('Mercado Pago', $order->payment_method_name);
-
         $order->payment_method = 'transferencia';
         $this->assertEquals('Transferencia Bancaria Directa', $order->payment_method_name);
     }

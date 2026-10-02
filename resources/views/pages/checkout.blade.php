@@ -677,19 +677,6 @@
                                 </div>
                             </label>
 
-                            <!-- Mercado Pago -->
-                            <label id="label-method-mp" style="border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; display:flex; align-items:flex-start; gap:14px; cursor:pointer; background:#ffffff; transition:all 0.2s ease;">
-                                <input type="radio" name="payment_method" value="mercadopago" style="margin-top:4px; accent-color:var(--primary);" onchange="handlePaymentMethodChange(this.value)">
-                                <div>
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <span style="font-weight:700; font-size:15px; color:var(--navy-900);">Mercado Pago (Tarjetas Débito / Crédito / Saldo MP)</span>
-                                    </div>
-                                    <p style="font-size:13px; color:var(--text-muted); margin-top:4px; margin-bottom:0;">
-                                        Paga en hasta 12 cuotas con tarjetas bancarias chilenas, Redcompra, Cuenta RUT o saldo en Mercado Pago en CLP.
-                                    </p>
-                                </div>
-                            </label>
-
                             <!-- Transferencia Bancaria Directa (5% OFF) -->
                             <label id="label-method-tf" style="border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; display:flex; align-items:flex-start; gap:14px; cursor:pointer; transition:all 0.2s ease; background:#ffffff;">
                                 <input type="radio" name="payment_method" value="transferencia" style="margin-top:4px; accent-color:var(--primary);" onchange="handlePaymentMethodChange(this.value)">
@@ -882,18 +869,14 @@
     function handlePaymentMethodChange(method) {
         currentPaymentMethod = method;
         const flowLabel = document.getElementById('label-method-flow');
-        const mpLabel = document.getElementById('label-method-mp');
         const tfLabel = document.getElementById('label-method-tf');
 
         // Reset borders & backgrounds
         if (flowLabel) { flowLabel.style.border = '1px solid var(--border-color)'; flowLabel.style.background = '#ffffff'; }
-        if (mpLabel) { mpLabel.style.border = '1px solid var(--border-color)'; mpLabel.style.background = '#ffffff'; }
         if (tfLabel) { tfLabel.style.border = '1px solid var(--border-color)'; tfLabel.style.background = '#ffffff'; }
 
         if (method === 'flow') {
             if (flowLabel) { flowLabel.style.border = '2px solid #0957c3'; flowLabel.style.background = '#f0f7ff'; }
-        } else if (method === 'mercadopago') {
-            if (mpLabel) { mpLabel.style.border = '2px solid var(--primary)'; mpLabel.style.background = '#f0f9ff'; }
         } else if (method === 'transferencia') {
             if (tfLabel) { tfLabel.style.border = '2px solid #16a34a'; tfLabel.style.background = '#f0fdf4'; }
         }
